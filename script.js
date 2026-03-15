@@ -32,28 +32,13 @@ const Layers      = _svg(<><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline
 const Type        = _svg(<><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></>);
 const Frame       = _svg(<><line x1="22" y1="6" x2="2" y2="6"/><line x1="22" y1="18" x2="2" y2="18"/><line x1="6" y1="2" x2="6" y2="22"/><line x1="18" y1="2" x2="18" y2="22"/></>);
 
-// ─── Firebase (compat SDK) ────────────────────────────────────────────────────
-let auth, db;
-try {
-  const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config)
-    ? JSON.parse(__firebase_config)
-    : null;
-  if (firebaseConfig) {
-    const app = firebase.apps.length
-      ? firebase.apps[0]
-      : firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth(app);
-    db   = firebase.firestore(app);
-  }
-} catch (e) {
-  console.error('Firebase init error:', e);
-}
-
-const appId = 'journal-photo-studio-v100-final';
+// ─── Persistance localStorage ─────────────────────────────────────────────────
+const LS_KEY = 'journalphoto_souvenirs';
+const lsLoad = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; } };
+const lsSave = (data) => localStorage.setItem(LS_KEY, JSON.stringify(data));
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 function App() {
-  const [user,       setUser]       = useState(null);
   const [souvenirs,  setSouvenirs]  = useState([]);
   const [loading,    setLoading]    = useState(true);
 
@@ -80,34 +65,11 @@ function App() {
     new Date().toLocaleString('fr-FR', { month: 'long', year: 'numeric' }),
   []);
 
-  // Auth ───────────────────────────────────────────────────────────────────────
+  // Chargement localStorage ────────────────────────────────────────────────────
   useEffect(() => {
-    if (!auth) { setLoading(false); return; }
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await auth.signInWithCustomToken(__initial_auth_token);
-        } else {
-          await auth.signInAnonymously();
-        }
-      } catch (e) { console.error('Auth error', e); setLoading(false); }
-    };
-    initAuth();
-    return auth.onAuthStateChanged(setUser);
+    setSouvenirs(lsLoad());
+    setLoading(false);
   }, []);
-
-  // Firestore ──────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!user || !db) return;
-    const ref = db
-      .collection('artifacts').doc(appId)
-      .collection('users').doc(user.uid)
-      .collection('souvenirs');
-    return ref.onSnapshot(
-      snap => { setSouvenirs(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false); },
-      ()   => setLoading(false)
-    );
-  }, [user]);
 
   // Filtrage ───────────────────────────────────────────────────────────────────
   const activeTarget = view === 'current' ? currentMonthLabel : openedAlbum;
@@ -153,27 +115,26 @@ function App() {
     });
   };
 
-  const submitBlock = async () => {
-    if (!user || !db || !tempPhotos.length || isUploading || !activeTarget) return;
+  const submitBlock = () => {
+    if (!tempPhotos.length || isUploading || !activeTarget) return;
     setIsUploading(true);
-    try {
-      await db.collection('artifacts').doc(appId)
-        .collection('users').doc(user.uid)
-        .collection('souvenirs').add({
-          images: tempPhotos, comment: comment.trim(),
-          date: selectedDate, createdAt: Date.now(), album: activeTarget,
-        });
-      setTempPhotos([]); setComment('');
-      setShowSuccess(true); setTimeout(() => setShowSuccess(false), 2000);
-    } catch (e) { console.error(e); }
-    finally { setIsUploading(false); }
+    const newBlock = {
+      id: Date.now().toString(),
+      images: tempPhotos, comment: comment.trim(),
+      date: selectedDate, createdAt: Date.now(), album: activeTarget,
+    };
+    const updated = [...souvenirs, newBlock];
+    lsSave(updated);
+    setSouvenirs(updated);
+    setTempPhotos([]); setComment('');
+    setShowSuccess(true); setTimeout(() => setShowSuccess(false), 2000);
+    setIsUploading(false);
   };
 
   const deleteBlock = id => {
-    if (!db) return;
-    db.collection('artifacts').doc(appId)
-      .collection('users').doc(user.uid)
-      .collection('souvenirs').doc(id).delete();
+    const updated = souvenirs.filter(s => s.id !== id);
+    lsSave(updated);
+    setSouvenirs(updated);
   };
 
   // Mosaïque ───────────────────────────────────────────────────────────────────
