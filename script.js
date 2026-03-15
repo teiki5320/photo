@@ -145,7 +145,10 @@ function App() {
   const handleFiles = e => {
     Array.from(e.target.files).forEach(f => {
       const r = new FileReader();
-      r.onload = async ev => setTempPhotos(p => [...p, await processImage(ev.target.result)]);
+      r.onload = async ev => {
+        const compressed = await processImage(ev.target.result);
+        setTempPhotos(p => [...p, compressed]);
+      };
       r.readAsDataURL(f);
     });
   };
