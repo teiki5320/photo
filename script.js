@@ -252,7 +252,7 @@ function App() {
         const btnS = { background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: 3, width: 26, height: 26, cursor: 'pointer', fontSize: 16, lineHeight: '26px', textAlign: 'center', padding: 0, touchAction: 'manipulation' };
         const Photo = ({ img, style, onLeft, onRight }) => (
           <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', position: 'relative', minHeight: 0, minWidth: 0, ...style }}>
-            <img src={imgSrc(img)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#f5f0ea', display: 'block' }} />
+            <img src={imgSrc(img)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             {(onLeft || onRight) && (
               <div className="no-print" style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
                 {onLeft  ? <button onPointerDown={e=>{e.preventDefault();onLeft(); }} style={btnS}>‹</button> : <span/>}
