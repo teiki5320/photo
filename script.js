@@ -198,14 +198,12 @@ function App() {
         const rightBlock   = displayBlocks[spreadIdx * 2 + 1];
 
         // ── Composant page scrapbook ─────────────────────────────────────
-        // display:flex + align-items:stretch → l'img se redimensionne via flex
-        // (évite le bug Safari iOS où height:100% ne résout pas sur un absolu
-        //  dont le parent tient sa hauteur de flex:1)
+        // position:relative + inset:0 sur l'img = remplissage garanti dans TOUS les
+        // cas (flex:1, grid 1fr, height:%) sans le bug Safari height:100% absolu.
+        // "inset:0" ancre l'img aux 4 bords → pas besoin de résoudre height:100%.
         const Photo = ({ src, style }) => (
-          <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', display: 'flex', minHeight: 0, minWidth: 0, ...style }}>
-            {/* flex:1 + alignSelf:stretch → l'img remplit largeur ET hauteur
-                sans dépendre de height:100% (bug Safari iOS avec flex:1 parent) */}
-            <img src={src} style={{ flex: 1, alignSelf: 'stretch', objectFit: 'cover', display: 'block', minWidth: 0, minHeight: 0 }} />
+          <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', position: 'relative', minHeight: 0, minWidth: 0, ...style }}>
+            <img src={src} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         );
 
@@ -233,7 +231,7 @@ function App() {
               {accentLine}
               <Photo src={imgs[0]} style={{ flex: 1 }} />
               {n >= 2 && (
-                <div style={{ display: 'flex', gap: '3%', height: '26%', marginTop: '3%' }}>
+                <div style={{ display: 'flex', gap: '3%', flex: '0 0 26%' }}>
                   {imgs.slice(1, 4).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
                 </div>
               )}
@@ -244,19 +242,22 @@ function App() {
           // Layout B – Grande gauche + titre + petites droite (style Sketch 2 CM)
           if (idx % 4 === 1) return (
             <div style={{ ...pg, flexDirection: 'row' }}>
-              <div style={{ flex: 1.3, display: 'flex', flexDirection: 'column', gap: '4%' }}>
+              {/* Colonne gauche : grande photo + optionnelle 4e photo */}
+              <div style={{ flex: 1.3, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
                 <Photo src={imgs[0]} style={{ flex: 1 }} />
-                {n >= 4 && <Photo src={imgs[3]} style={{ height: '28%' }} />}
+                {n >= 4 && <Photo src={imgs[3]} style={{ flex: '0 0 28%' }} />}
               </div>
-              <div style={{ flex: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '5%' }}>
-                <div>
+              {/* Colonne droite : texte (shrink 0) + photos qui partagent l'espace restant */}
+              <div style={{ flex: 0.9, display: 'flex', flexDirection: 'column', paddingLeft: '5%', gap: '4%', minHeight: 0 }}>
+                <div style={{ flexShrink: 0 }}>
                   <p style={{ fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', margin: '0 0 6px' }}>{dateStr}</p>
                   {accentLine}
                   <p style={{ fontSize: '18px', color: '#1a1a2e', margin: '0 0 8px', lineHeight: 1.2, fontFamily: 'Georgia,serif', fontWeight: 'bold' }}>{title}</p>
                   <p style={{ fontSize: '11px', color: '#666', fontStyle: 'italic', lineHeight: 1.5, fontFamily: 'Georgia,serif' }}>{comment}</p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6%' }}>
-                  {imgs.slice(1, 3).map((src, i) => <Photo key={i} src={src} style={{ height: '22%' }} />)}
+                {/* flex:1 sur le container + flex:1 sur chaque Photo → hauteur résolue via flex */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6%', minHeight: 0 }}>
+                  {imgs.slice(1, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
                 </div>
               </div>
             </div>
@@ -279,7 +280,7 @@ function App() {
           // Layout D – Bandeau 3 petites + grande hero (style Sketch 3 CM)
           return (
             <div style={pg}>
-              <div style={{ display: 'flex', gap: '3%', height: '22%' }}>
+              <div style={{ display: 'flex', gap: '3%', flex: '0 0 22%' }}>
                 {imgs.slice(0, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
               </div>
               <Photo src={imgs[Math.min(3, n-1)]} style={{ flex: 1 }} />
