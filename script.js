@@ -57,6 +57,17 @@ function App() {
   const [isPrintMode,    setIsPrintMode]    = useState(false);
   const [currentSpread,  setCurrentSpread]  = useState(0);
 
+  // Modifications manuelles dans l'Album Studio (layout, commentaire, ordre photos)
+  const [pageOverrides, setPageOverrides] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('journalphoto_overrides') || '{}'); } catch { return {}; }
+  });
+  const setPageOverride = (key, patch) =>
+    setPageOverrides(prev => {
+      const next = { ...prev, [key]: { ...(prev[key] || {}), ...patch } };
+      try { localStorage.setItem('journalphoto_overrides', JSON.stringify(next)); } catch {}
+      return next;
+    });
+
   const [activeSlider, setActiveSlider] = useState(null);
   const [sliderIdx,    setSliderIdx]    = useState(0);
 
@@ -197,19 +208,74 @@ function App() {
         const leftBlock    = displayBlocks[spreadIdx * 2];
         const rightBlock   = displayBlocks[spreadIdx * 2 + 1];
 
-        // ── Composant page scrapbook ─────────────────────────────────────
-        // position:relative + inset:0 sur l'img = remplissage garanti dans TOUS les
-        // cas (flex:1, grid 1fr, height:%) sans le bug Safari height:100% absolu.
-        // "inset:0" ancre l'img aux 4 bords → pas besoin de résoudre height:100%.
-        const Photo = ({ src, style }) => (
+        // ── Helpers overrides ────────────────────────────────────────────
+        const getOv = idx => pageOverrides[`${openedAlbum}:${idx}`] || {};
+        const setOv = (idx, patch) => setPageOverride(`${openedAlbum}:${idx}`, patch);
+
+        // ── Photo : cadre avec img inset:0 + flèches de réordonnancement ─
+        const btnS = { background: 'rgba(0,0,0,0.55)', border: 'none', color: 'white', borderRadius: 3, width: 24, height: 24, cursor: 'pointer', fontSize: 15, lineHeight: '24px', textAlign: 'center', padding: 0, touchAction: 'manipulation' };
+        const Photo = ({ src, style, onLeft, onRight }) => (
           <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', position: 'relative', minHeight: 0, minWidth: 0, ...style }}>
             <img src={src} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            {(onLeft || onRight) && (
+              <div className="no-print" style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
+                {onLeft  ? <button onPointerDown={e=>{e.preventDefault();onLeft(); }} style={btnS}>‹</button> : <span/>}
+                {onRight ? <button onPointerDown={e=>{e.preventDefault();onRight();}} style={btnS}>›</button> : <span/>}
+              </div>
+            )}
           </div>
         );
 
+        // ── Barre de sélection de layout (overlay bas de page) ───────────
+        const LayoutBar = ({ pageIdx }) => {
+          const ov = getOv(pageIdx);
+          const cur = ov.layout !== undefined ? ov.layout : pageIdx % 4;
+          return (
+            <div className="no-print" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'rgba(253,252,248,0.96)', borderTop: '1px solid #e8e0d4', boxSizing: 'border-box' }}>
+              <span style={{ fontSize: '8px', letterSpacing: '2px', textTransform: 'uppercase', color: '#b0a090', fontFamily: 'sans-serif', marginRight: 2 }}>Mise en page</span>
+              {['A','B','C','D'].map((l, li) => (
+                <button key={li} onPointerDown={() => setOv(pageIdx, { layout: li })}
+                  style={{ padding: '2px 8px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 'bold', fontFamily: 'sans-serif', background: cur === li ? '#c8b99a' : '#f0ece6', color: cur === li ? 'white' : '#999' }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          );
+        };
+
+        // ── Page scrapbook ───────────────────────────────────────────────
         const ScrapbookPage = ({ block, idx }) => {
-          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
+          const ov         = getOv(idx);
+          const effImages  = ov.images  || (block?.images || []);
+          const effComment = ov.comment !== undefined ? ov.comment : (block?.comment || '');
+          const effLayout  = ov.layout  !== undefined ? ov.layout  : idx % 4;
+          const n          = effImages.length;
+          const onOv       = patch => setOv(idx, patch);
+
+          // Swap deux photos dans l'ordre
+          const moveImg = (i, j) => {
+            const imgs = [...effImages]; [imgs[i], imgs[j]] = [imgs[j], imgs[i]]; onOv({ images: imgs });
+          };
+          // Génère les props de déplacement pour la photo à l'index i
+          const mp = i => ({
+            onLeft:  i > 0     ? () => moveImg(i, i-1) : undefined,
+            onRight: i < n - 1 ? () => moveImg(i, i+1) : undefined,
+          });
+
+          // Commentaire éditable inline (sauvegarde au blur)
+          const commentStyle = { fontStyle: 'italic', color: '#444', fontSize: '12px', lineHeight: 1.5, fontFamily: 'Georgia,serif', outline: 'none', borderBottom: '1px dashed rgba(200,185,154,0.6)', cursor: 'text', margin: 0, minHeight: '1em' };
+          const CommentP = ({ style: s = {} }) => (
+            <p contentEditable suppressContentEditableWarning
+              onBlur={e => onOv({ comment: e.target.innerText.trim() })}
+              style={{ ...commentStyle, ...s }}>
+              {effComment || '—'}
+            </p>
+          );
+
+          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', paddingBottom: 'calc(6% + 30px)', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
           const accentLine = <div style={{ height: '2px', background: 'linear-gradient(to right,#c8b99a,transparent)', marginBottom: '4%' }} />;
+          const dateStr = block ? new Date(block.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+          const title = effComment ? effComment.split(' ').slice(0, 4).join(' ') : 'Souvenir';
 
           if (!block) return (
             <div style={{ ...pg, alignItems: 'center', justifyContent: 'center' }}>
@@ -217,78 +283,68 @@ function App() {
             </div>
           );
 
-          const { images: imgs, comment, date } = block;
-          const n = imgs.length;
-          const dateStr = new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-          const title   = comment ? comment.split(' ').slice(0, 4).join(' ') : 'Souvenir';
-
-          // Layout A – Hero pleine page (1 photo ou index 0)
-          if (idx % 4 === 0 || n === 1) return (
+          // Layout A – Hero + strip
+          if (effLayout === 0) return (
             <div style={pg}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
                 <p style={{ margin: 0, fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' }}>{dateStr}</p>
               </div>
               {accentLine}
-              <Photo src={imgs[0]} style={{ flex: 1 }} />
+              <Photo src={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
               {n >= 2 && (
                 <div style={{ display: 'flex', gap: '3%', flex: '0 0 26%' }}>
-                  {imgs.slice(1, 4).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
+                  {effImages.slice(1, 4).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} {...mp(i+1)} />)}
                 </div>
               )}
-              <p style={{ margin: '3% 0 0', fontStyle: 'italic', color: '#444', fontSize: '12px', lineHeight: 1.5, fontFamily: 'Georgia,serif' }}>« {comment || '—'} »</p>
+              <CommentP style={{ margin: '3% 0 0' }} />
             </div>
           );
 
-          // Layout B – Grande gauche + titre + petites droite (style Sketch 2 CM)
-          if (idx % 4 === 1) return (
-            <div style={{ ...pg, flexDirection: 'row' }}>
-              {/* Colonne gauche : grande photo + optionnelle 4e photo */}
+          // Layout B – Grande gauche + titre + petites droite
+          if (effLayout === 1) return (
+            <div style={{ ...pg, flexDirection: 'row', paddingBottom: 'calc(6% + 30px)' }}>
               <div style={{ flex: 1.3, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
-                <Photo src={imgs[0]} style={{ flex: 1 }} />
-                {n >= 4 && <Photo src={imgs[3]} style={{ flex: '0 0 28%' }} />}
+                <Photo src={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
+                {n >= 4 && <Photo src={effImages[3]} style={{ flex: '0 0 28%' }} {...mp(3)} />}
               </div>
-              {/* Colonne droite : texte (shrink 0) + photos qui partagent l'espace restant */}
               <div style={{ flex: 0.9, display: 'flex', flexDirection: 'column', paddingLeft: '5%', gap: '4%', minHeight: 0 }}>
                 <div style={{ flexShrink: 0 }}>
                   <p style={{ fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', margin: '0 0 6px' }}>{dateStr}</p>
                   {accentLine}
                   <p style={{ fontSize: '18px', color: '#1a1a2e', margin: '0 0 8px', lineHeight: 1.2, fontFamily: 'Georgia,serif', fontWeight: 'bold' }}>{title}</p>
-                  <p style={{ fontSize: '11px', color: '#666', fontStyle: 'italic', lineHeight: 1.5, fontFamily: 'Georgia,serif' }}>{comment}</p>
+                  <CommentP style={{ fontSize: '11px', color: '#666' }} />
                 </div>
-                {/* flex:1 sur le container + flex:1 sur chaque Photo → hauteur résolue via flex */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6%', minHeight: 0 }}>
-                  {imgs.slice(1, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
+                  {effImages.slice(1, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} {...mp(i+1)} />)}
                 </div>
               </div>
             </div>
           );
 
-          // Layout C – Grille 2×2 + bandeau titre (style Sketch 1 CM)
-          if (idx % 4 === 2) return (
+          // Layout C – Grille 2×2
+          if (effLayout === 2) return (
             <div style={pg}>
               <div style={{ borderBottom: '2px solid #c8b99a', paddingBottom: '3%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <p style={{ margin: 0, fontSize: '20px', fontFamily: 'Georgia,serif', fontWeight: 'bold', color: '#1a1a2e' }}>{title}</p>
                 <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' }}>{dateStr}</p>
               </div>
               <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '3%' }}>
-                {[0,1,2,3].map(i => <Photo key={i} src={imgs[i] || imgs[n-1]} style={{ width: '100%', height: '100%' }} />)}
+                {[0,1,2,3].map(i => <Photo key={i} src={effImages[i] || effImages[n-1]} style={{ width: '100%', height: '100%' }} {...mp(i)} />)}
               </div>
-              <p style={{ margin: 0, fontSize: '11px', color: '#555', fontStyle: 'italic', fontFamily: 'Georgia,serif', lineHeight: 1.5 }}>« {comment || '—'} »</p>
+              <CommentP style={{ margin: '2% 0 0' }} />
             </div>
           );
 
-          // Layout D – Bandeau 3 petites + grande hero (style Sketch 3 CM)
+          // Layout D – Bandeau 3 petites + grande hero
           return (
             <div style={pg}>
               <div style={{ display: 'flex', gap: '3%', flex: '0 0 22%' }}>
-                {imgs.slice(0, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
+                {effImages.slice(0, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} {...mp(i)} />)}
               </div>
-              <Photo src={imgs[Math.min(3, n-1)]} style={{ flex: 1 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2%' }}>
-                <div>
-                  <p style={{ margin: '0 0 4px', fontSize: '14px', fontFamily: 'Georgia,serif', fontStyle: 'italic', color: '#333' }}>« {comment || '—'} »</p>
-                </div>
-                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', flexShrink: 0, marginLeft: '8px' }}>{dateStr}</p>
+              <Photo src={effImages[Math.min(3, n-1)]} style={{ flex: 1 }} {...mp(Math.min(3, n-1))} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2%', gap: '8px' }}>
+                <CommentP style={{ flex: 1 }} />
+                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', flexShrink: 0 }}>{dateStr}</p>
               </div>
             </div>
           );
@@ -315,14 +371,16 @@ function App() {
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 40px', overflow: 'hidden' }}>
               <div style={{ display: 'flex', width: '100%', maxWidth: 960, aspectRatio: '2/1.4', filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.7))' }}>
                 {/* Page gauche */}
-                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '6px 0 0 6px', overflow: 'hidden', boxShadow: 'inset -6px 0 12px rgba(0,0,0,0.15)' }}>
+                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '6px 0 0 6px', overflow: 'hidden', boxShadow: 'inset -6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
                   <ScrapbookPage block={leftBlock} idx={spreadIdx * 2} />
+                  <LayoutBar pageIdx={spreadIdx * 2} />
                 </div>
                 {/* Reliure */}
                 <div style={{ width: 10, background: 'linear-gradient(to right,#bbb,#f0ede8,#bbb)', flexShrink: 0, boxShadow: 'inset 0 0 6px rgba(0,0,0,0.2)' }} />
                 {/* Page droite */}
-                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '0 6px 6px 0', overflow: 'hidden', boxShadow: 'inset 6px 0 12px rgba(0,0,0,0.15)' }}>
+                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '0 6px 6px 0', overflow: 'hidden', boxShadow: 'inset 6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
                   <ScrapbookPage block={rightBlock} idx={spreadIdx * 2 + 1} />
+                  <LayoutBar pageIdx={spreadIdx * 2 + 1} />
                 </div>
               </div>
             </div>
