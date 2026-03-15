@@ -198,9 +198,11 @@ function App() {
         const rightBlock   = displayBlocks[spreadIdx * 2 + 1];
 
         // ── Composant page scrapbook ─────────────────────────────────────
+        // position:relative + img absolute = l'image remplit TOUJOURS son cadre
+        // quelle que soit la source de hauteur du parent (flex, %, px…)
         const Photo = ({ src, style }) => (
-          <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', flexShrink: 0, ...style }}>
-            <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', position: 'relative', minHeight: 0, ...style }}>
+            <img src={src} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
         );
 
