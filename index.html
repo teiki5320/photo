@@ -8,7 +8,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase Compat (v9 compat layer, pas besoin de bundler) -->
+  <!-- Firebase Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -17,18 +17,46 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 
-  <!-- Babel Standalone (transpile JSX dans le navigateur) -->
+  <!-- Babel Standalone -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Lucide React (icônes) -->
-  <script src="https://cdn.jsdelivr.net/npm/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
 
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="bg-[#fcfaf7]">
   <div id="root"></div>
 
-  <!-- Le script est transpilé par Babel (JSX – mode script, pas module) -->
-  <script type="text/babel" src="script.js"></script>
+  <!--
+    Chargement manuel de script.js via fetch → Babel.transform → eval.
+    Plus fiable que <script type="text/babel" src="..."> sur GitHub Pages.
+  -->
+  <script>
+    window.addEventListener('load', function () {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', './script.js', true);
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            var result = Babel.transform(xhr.responseText, {
+              presets: [['react', { runtime: 'classic' }]]
+            });
+            var s = document.createElement('script');
+            s.textContent = result.code;
+            document.body.appendChild(s);
+          } catch (e) {
+            document.getElementById('root').innerHTML =
+              '<p style="padding:2rem;color:red;font-family:monospace">Erreur Babel : ' + e.message + '</p>';
+          }
+        } else {
+          document.getElementById('root').innerHTML =
+            '<p style="padding:2rem;color:red;font-family:monospace">Impossible de charger script.js (HTTP ' + xhr.status + ')</p>';
+        }
+      };
+      xhr.onerror = function () {
+        document.getElementById('root').innerHTML =
+          '<p style="padding:2rem;color:red;font-family:monospace">Erreur réseau : script.js introuvable</p>';
+      };
+      xhr.send();
+    });
+  </script>
 </body>
 </html>
