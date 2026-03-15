@@ -104,7 +104,7 @@ function App() {
   const displayBlocks = useMemo(() =>
     souvenirs
       .filter(s => s.album === activeTarget)
-      .sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.createdAt || 0) - (a.createdAt || 0)),
+      .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.createdAt || 0) - (b.createdAt || 0)),
   [souvenirs, activeTarget]);
 
   const albumsMap = useMemo(() =>
@@ -282,28 +282,6 @@ function App() {
           );
         };
 
-        // ── Barre de mise en page (page simple uniquement) ───────────────
-        const LayoutBar = ({ blockIdx, half }) => {
-          if (half !== null) return null; // Pas de barre pour les demi-pages auto
-          const ov        = getOv(blockIdx);
-          const allImgs   = ov.images || (displayBlocks[blockIdx]?.images || []);
-          const curLayout = ov.layout; // undefined = auto (SmartRows)
-          return (
-            <div className="no-print" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(253,252,248,0.96)', borderTop: '1px solid #e8e0d4', boxSizing: 'border-box' }}>
-              <span style={{ fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', color: '#b0a090', fontFamily: 'sans-serif', marginRight: 4 }}>Mise en page</span>
-              <button onPointerDown={() => setOv(blockIdx, { layout: undefined })}
-                style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 'bold', fontFamily: 'sans-serif', background: curLayout === undefined ? '#c8b99a' : '#f0ece6', color: curLayout === undefined ? 'white' : '#999' }}>
-                Auto
-              </button>
-              {['A','B','C','D'].map((l, li) => (
-                <button key={li} onPointerDown={() => setOv(blockIdx, { layout: li })}
-                  style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 'bold', fontFamily: 'sans-serif', background: curLayout === li ? '#c8b99a' : '#f0ece6', color: curLayout === li ? 'white' : '#999', minWidth: 38 }}>
-                  {l}
-                </button>
-              ))}
-            </div>
-          );
-        };
 
         // ── Page scrapbook ────────────────────────────────────────────────
         const ScrapbookPage = ({ block, blockIdx, half }) => {
@@ -345,12 +323,10 @@ function App() {
             </p>
           );
 
-          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', paddingBottom: half !== null ? '6%' : 'calc(6% + 44px)', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
+          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
           const accentLine = <div style={{ height: '2px', background: 'linear-gradient(to right,#c8b99a,transparent)', marginBottom: '4%' }} />;
           const dateStr   = new Date(block.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
           const dateStyle = { margin: 0, fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' };
-          const title     = effComment ? effComment.split(' ').slice(0, 4).join(' ') : 'Souvenir';
-
           // ── Demi-pages (auto 2P) : toujours SmartRows ────────────────
           if (half === 'A') return (
             <div style={pg}>
@@ -375,97 +351,13 @@ function App() {
             </div>
           );
 
-          // ── Page simple : Auto (SmartRows) ou override A/B/C/D ────────
-          const layout = ov.layout;
-
-          // Auto : disposition intelligente selon les orientations
-          if (layout === undefined) return (
-            <div style={pg}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
-                <p style={dateStyle}>{dateStr}</p>
-              </div>
-              {accentLine}
-              <SmartRows images={effImages} mp={mp} />
-              <CommentP style={{ margin: '3% 0 0' }} />
-            </div>
-          );
-
-          // Layout A – Hero grand + strip de petites (aspects proportionnels)
-          if (layout === 'A') return (
+          // Page simple : disposition 100% automatique
+          return (
             <div style={pg}>
               <div style={{ marginBottom: '2%' }}><p style={dateStyle}>{dateStr}</p></div>
               {accentLine}
-              <Photo img={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
-              {n >= 2 && (
-                <div style={{ display: 'flex', gap: '3%', flex: `0 0 ${imgAspect(effImages[0]) < 1 ? '30%' : '24%'}` }}>
-                  {effImages.slice(1, 5).map((img, i) => (
-                    <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i+1)} />
-                  ))}
-                </div>
-              )}
+              <SmartRows images={effImages} mp={mp} />
               <CommentP style={{ margin: '3% 0 0' }} />
-            </div>
-          );
-
-          // Layout B – Colonne gauche large + colonne droite étroite
-          if (layout === 'B') return (
-            <div style={{ ...pg, flexDirection: 'row' }}>
-              <div style={{ flex: 1.3, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
-                <Photo img={effImages[0]} style={{ flex: 1/imgAspect(effImages[0]) }} {...mp(0)} />
-                {n >= 4 && <Photo img={effImages[3]} style={{ flex: 1/imgAspect(effImages[3]) }} {...mp(3)} />}
-              </div>
-              <div style={{ flex: 0.9, display: 'flex', flexDirection: 'column', paddingLeft: '5%', gap: '4%', minHeight: 0 }}>
-                <div style={{ flexShrink: 0 }}>
-                  <p style={{ fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', margin: '0 0 6px' }}>{dateStr}</p>
-                  {accentLine}
-                  <p style={{ fontSize: '17px', color: '#1a1a2e', margin: '0 0 8px', lineHeight: 1.2, fontFamily: 'Georgia,serif', fontWeight: 'bold' }}>{title}</p>
-                  <CommentP style={{ fontSize: '11px', color: '#666' }} />
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6%', minHeight: 0 }}>
-                  {effImages.slice(1, 3).map((img, i) => (
-                    <Photo key={i} img={img} style={{ flex: 1/imgAspect(img) }} {...mp(i+1)} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-
-          // Layout C – Grille 2 rangées avec aspects proportionnels
-          if (layout === 'C') {
-            const row1 = [0, 1].filter(i => i < n);
-            const row2 = [2, 3].filter(i => i < n);
-            return (
-              <div style={pg}>
-                <div style={{ borderBottom: '2px solid #c8b99a', paddingBottom: '3%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexShrink: 0 }}>
-                  <p style={{ margin: 0, fontSize: '18px', fontFamily: 'Georgia,serif', fontWeight: 'bold', color: '#1a1a2e' }}>{title}</p>
-                  <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' }}>{dateStr}</p>
-                </div>
-                <div style={{ flex: rowFlex(row1, effImages), display: 'flex', gap: '3%' }}>
-                  {row1.map(i => <Photo key={i} img={effImages[i]} style={{ flex: imgAspect(effImages[i]) }} {...mp(i)} />)}
-                </div>
-                {row2.length > 0 && (
-                  <div style={{ flex: rowFlex(row2, effImages), display: 'flex', gap: '3%' }}>
-                    {row2.map(i => <Photo key={i} img={effImages[i]} style={{ flex: imgAspect(effImages[i]) }} {...mp(i)} />)}
-                  </div>
-                )}
-                <CommentP style={{ margin: '2% 0 0' }} />
-              </div>
-            );
-          }
-
-          // Layout D – Bandeau en haut + grande photo hero
-          return (
-            <div style={pg}>
-              <div style={{ display: 'flex', gap: '3%', flex: rowFlex([0,1,2].filter(i=>i<n), effImages) }}>
-                {effImages.slice(0, 3).map((img, i) => (
-                  <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i)} />
-                ))}
-              </div>
-              <Photo img={effImages[Math.min(3, n-1)]} style={{ flex: 1/imgAspect(effImages[Math.min(3, n-1)]) }} {...mp(Math.min(3, n-1))} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2%', gap: '8px' }}>
-                <CommentP style={{ flex: 1 }} />
-                <p style={dateStyle}>{dateStr}</p>
-              </div>
             </div>
           );
         };
@@ -498,12 +390,10 @@ function App() {
               <div style={{ display: 'flex', width: '100%', maxWidth: 960, aspectRatio: '2/1.4', filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.7))' }}>
                 <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '6px 0 0 6px', overflow: 'hidden', boxShadow: 'inset -6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
                   {leftEntry ? <ScrapbookPage block={leftEntry.block} blockIdx={leftEntry.blockIdx} half={leftEntry.half} /> : <EmptyPage />}
-                  {leftEntry && <LayoutBar blockIdx={leftEntry.blockIdx} half={leftEntry.half} />}
                 </div>
                 <div style={{ width: 10, background: 'linear-gradient(to right,#bbb,#f0ede8,#bbb)', flexShrink: 0, boxShadow: 'inset 0 0 6px rgba(0,0,0,0.2)' }} />
                 <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '0 6px 6px 0', overflow: 'hidden', boxShadow: 'inset 6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
                   {rightEntry ? <ScrapbookPage block={rightEntry.block} blockIdx={rightEntry.blockIdx} half={rightEntry.half} /> : <EmptyPage />}
-                  {rightEntry && <LayoutBar blockIdx={rightEntry.blockIdx} half={rightEntry.half} />}
                 </div>
               </div>
             </div>
