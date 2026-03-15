@@ -37,7 +37,7 @@
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             var result = Babel.transform(xhr.responseText, {
-              presets: ['env', ['react', { runtime: 'classic' }]]
+              presets: [['react', { runtime: 'classic' }]]
             });
             var s = document.createElement('script');
             s.textContent = result.code;
