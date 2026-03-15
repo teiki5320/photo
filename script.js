@@ -54,9 +54,8 @@ function App() {
   const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
   const [newAlbumName,    setNewAlbumName]    = useState('');
 
-  const [isPrintMode,  setIsPrintMode]  = useState(false);
-  const [collageStyle, setCollageStyle] = useState('masonry');
-  const [collageSeed,  setCollageSeed]  = useState(Math.random());
+  const [isPrintMode,    setIsPrintMode]    = useState(false);
+  const [currentSpread,  setCurrentSpread]  = useState(0);
 
   const [activeSlider, setActiveSlider] = useState(null);
   const [sliderIdx,    setSliderIdx]    = useState(0);
@@ -191,69 +190,159 @@ function App() {
         </div>
       )}
 
-      {/* Print Studio */}
-      {isPrintMode && (
-        <div className="fixed inset-0 z-[150] bg-white overflow-y-auto no-scrollbar">
-          <div className="sticky top-0 bg-white/95 backdrop-blur-md z-[160] px-8 py-6 border-b flex justify-between items-center no-print">
-            <button onClick={() => setIsPrintMode(false)} className="p-3 bg-slate-50 rounded-full hover:bg-slate-100"><ChevronLeft size={24} /></button>
-            <div className="text-center">
-              <h2 className="text-xl font-bold uppercase tracking-widest">Collage Studio</h2>
-              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">{openedAlbum}</p>
-            </div>
-            <button onClick={() => window.print()} className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold text-xs shadow-xl flex items-center gap-3">
-              <Printer size={16} /> IMPRIMER / PDF
-            </button>
+      {/* ── Album Livre Studio ───────────────────────────────────────────── */}
+      {isPrintMode && (() => {
+        const totalSpreads = Math.max(1, Math.ceil(displayBlocks.length / 2));
+        const spreadIdx    = Math.min(currentSpread, totalSpreads - 1);
+        const leftBlock    = displayBlocks[spreadIdx * 2];
+        const rightBlock   = displayBlocks[spreadIdx * 2 + 1];
+
+        // ── Composant page scrapbook ─────────────────────────────────────
+        const Photo = ({ src, style }) => (
+          <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', flexShrink: 0, ...style }}>
+            <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
-          <div className={`max-w-5xl mx-auto p-12 mb-32 ${collageStyle === 'polaroid' ? 'bg-slate-50' : 'bg-white'}`}>
-            <div className={`
-              ${collageStyle === 'masonry'  ? 'columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8' : ''}
-              ${collageStyle === 'grid'     ? 'grid grid-cols-1 md:grid-cols-2 gap-12' : ''}
-              ${collageStyle === 'magazine' ? 'grid grid-cols-12 gap-8' : ''}
-              ${collageStyle === 'polaroid' ? 'flex flex-wrap justify-center gap-12' : ''}
-            `}>
-              {displayBlocks.map((b, idx) => (
-                <div key={b.id} className={`relative break-inside-avoid
-                  ${collageStyle === 'magazine' ? (idx % 3 === 0 ? 'col-span-12' : 'col-span-6') : ''}
-                  ${collageStyle === 'polaroid' ? 'w-80' : ''}
-                `}>
-                  <div className={`overflow-hidden bg-white shadow-xl
-                    ${collageStyle === 'polaroid' ? 'p-4 pb-16 border transform rotate-1' : 'border-[8px] border-white'}
-                    ${collageStyle === 'magazine' ? 'aspect-[16/7]' : 'aspect-square rounded-2xl'}
-                  `}><Mosaic images={b.images} /></div>
-                  <div className={`mt-4 ${collageStyle === 'polaroid' ? 'absolute bottom-6 left-6 right-6' : 'px-2'}`}>
-                    <p className="font-sans font-bold uppercase tracking-widest mb-1 text-[9px] text-slate-300">
-                      {new Date(b.date).toLocaleDateString('fr-FR')}
-                    </p>
-                    <p className={`italic text-slate-600 ${collageStyle === 'magazine' ? 'text-lg leading-relaxed' : 'text-sm leading-snug'}`}>{b.comment}</p>
-                  </div>
-                </div>
-              ))}
+        );
+
+        const ScrapbookPage = ({ block, idx }) => {
+          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
+          const accentLine = <div style={{ height: '2px', background: 'linear-gradient(to right,#c8b99a,transparent)', marginBottom: '4%' }} />;
+
+          if (!block) return (
+            <div style={{ ...pg, alignItems: 'center', justifyContent: 'center' }}>
+              <p style={{ color: '#ddd', fontStyle: 'italic', fontFamily: 'Georgia,serif', fontSize: '13px' }}>— page vide —</p>
             </div>
-          </div>
-          {/* Sélecteur de style */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t p-6 z-[170] no-print">
-            <div className="max-w-4xl mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-8">
-                {[
-                  { id: 'masonry',  label: 'Masonry',  icon: <LayoutGrid size={20} /> },
-                  { id: 'grid',     label: 'Grille',   icon: <Layers     size={20} /> },
-                  { id: 'magazine', label: 'Magazine', icon: <Type       size={20} /> },
-                  { id: 'polaroid', label: 'Polaroid', icon: <Frame      size={20} /> },
-                ].map(s => (
-                  <button key={s.id} onClick={() => setCollageStyle(s.id)}
-                    className={`flex flex-col items-center gap-2 transition-all ${collageStyle === s.id ? 'text-blue-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
-                    <div className={`p-4 rounded-2xl border-2 transition-all ${collageStyle === s.id ? 'border-blue-600 bg-blue-50 shadow-lg' : 'border-slate-100 bg-white shadow-sm'}`}>{s.icon}</div>
-                    <span className="text-[9px] font-bold uppercase tracking-widest">{s.label}</span>
-                  </button>
-                ))}
+          );
+
+          const { images: imgs, comment, date } = block;
+          const n = imgs.length;
+          const dateStr = new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+          const title   = comment ? comment.split(' ').slice(0, 4).join(' ') : 'Souvenir';
+
+          // Layout A – Hero pleine page (1 photo ou index 0)
+          if (idx % 4 === 0 || n === 1) return (
+            <div style={pg}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
+                <p style={{ margin: 0, fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' }}>{dateStr}</p>
               </div>
-              <button onClick={() => setCollageSeed(Math.random())} className="p-4 bg-slate-50 rounded-2xl text-slate-400 hover:text-blue-600 transition-all active:rotate-180">
-                <Shuffle size={20} />
+              {accentLine}
+              <Photo src={imgs[0]} style={{ flex: 1 }} />
+              {n >= 2 && (
+                <div style={{ display: 'flex', gap: '3%', height: '26%', marginTop: '3%' }}>
+                  {imgs.slice(1, 4).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
+                </div>
+              )}
+              <p style={{ margin: '3% 0 0', fontStyle: 'italic', color: '#444', fontSize: '12px', lineHeight: 1.5, fontFamily: 'Georgia,serif' }}>« {comment || '—'} »</p>
+            </div>
+          );
+
+          // Layout B – Grande gauche + titre + petites droite (style Sketch 2 CM)
+          if (idx % 4 === 1) return (
+            <div style={{ ...pg, flexDirection: 'row' }}>
+              <div style={{ flex: 1.3, display: 'flex', flexDirection: 'column', gap: '4%' }}>
+                <Photo src={imgs[0]} style={{ flex: 1 }} />
+                {n >= 4 && <Photo src={imgs[3]} style={{ height: '28%' }} />}
+              </div>
+              <div style={{ flex: 0.9, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingLeft: '5%' }}>
+                <div>
+                  <p style={{ fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', margin: '0 0 6px' }}>{dateStr}</p>
+                  {accentLine}
+                  <p style={{ fontSize: '18px', color: '#1a1a2e', margin: '0 0 8px', lineHeight: 1.2, fontFamily: 'Georgia,serif', fontWeight: 'bold' }}>{title}</p>
+                  <p style={{ fontSize: '11px', color: '#666', fontStyle: 'italic', lineHeight: 1.5, fontFamily: 'Georgia,serif' }}>{comment}</p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6%' }}>
+                  {imgs.slice(1, 3).map((src, i) => <Photo key={i} src={src} style={{ height: '22%' }} />)}
+                </div>
+              </div>
+            </div>
+          );
+
+          // Layout C – Grille 2×2 + bandeau titre (style Sketch 1 CM)
+          if (idx % 4 === 2) return (
+            <div style={pg}>
+              <div style={{ borderBottom: '2px solid #c8b99a', paddingBottom: '3%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <p style={{ margin: 0, fontSize: '20px', fontFamily: 'Georgia,serif', fontWeight: 'bold', color: '#1a1a2e' }}>{title}</p>
+                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' }}>{dateStr}</p>
+              </div>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '3%' }}>
+                {[0,1,2,3].map(i => <Photo key={i} src={imgs[i] || imgs[n-1]} style={{ width: '100%', height: '100%' }} />)}
+              </div>
+              <p style={{ margin: 0, fontSize: '11px', color: '#555', fontStyle: 'italic', fontFamily: 'Georgia,serif', lineHeight: 1.5 }}>« {comment || '—'} »</p>
+            </div>
+          );
+
+          // Layout D – Bandeau 3 petites + grande hero (style Sketch 3 CM)
+          return (
+            <div style={pg}>
+              <div style={{ display: 'flex', gap: '3%', height: '22%' }}>
+                {imgs.slice(0, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} />)}
+              </div>
+              <Photo src={imgs[Math.min(3, n-1)]} style={{ flex: 1 }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2%' }}>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontSize: '14px', fontFamily: 'Georgia,serif', fontStyle: 'italic', color: '#333' }}>« {comment || '—'} »</p>
+                </div>
+                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', flexShrink: 0, marginLeft: '8px' }}>{dateStr}</p>
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: '#1c1c2e', display: 'flex', flexDirection: 'column' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} className="no-print">
+              <button onClick={() => setIsPrintMode(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                <ChevronLeft size={22} />
+              </button>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ margin: 0, fontSize: '11px', letterSpacing: '4px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.9)', fontFamily: 'sans-serif', fontWeight: 'bold' }}>Album Studio</p>
+                <p style={{ margin: '2px 0 0', fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', fontFamily: 'sans-serif' }}>{openedAlbum}</p>
+              </div>
+              <button onClick={() => window.print()} style={{ background: 'white', border: 'none', borderRadius: 30, padding: '10px 22px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Printer size={14} /> Imprimer
               </button>
             </div>
+
+            {/* Book */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 40px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', width: '100%', maxWidth: 960, aspectRatio: '2/1.4', filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.7))' }}>
+                {/* Page gauche */}
+                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '6px 0 0 6px', overflow: 'hidden', boxShadow: 'inset -6px 0 12px rgba(0,0,0,0.15)' }}>
+                  <ScrapbookPage block={leftBlock} idx={spreadIdx * 2} />
+                </div>
+                {/* Reliure */}
+                <div style={{ width: 10, background: 'linear-gradient(to right,#bbb,#f0ede8,#bbb)', flexShrink: 0, boxShadow: 'inset 0 0 6px rgba(0,0,0,0.2)' }} />
+                {/* Page droite */}
+                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '0 6px 6px 0', overflow: 'hidden', boxShadow: 'inset 6px 0 12px rgba(0,0,0,0.15)' }}>
+                  <ScrapbookPage block={rightBlock} idx={spreadIdx * 2 + 1} />
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation pages */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24, padding: '16px 24px', flexShrink: 0 }} className="no-print">
+              <button
+                onClick={() => setCurrentSpread(s => Math.max(0, s - 1))}
+                disabled={spreadIdx === 0}
+                style={{ background: spreadIdx === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 48, height: 48, cursor: spreadIdx === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: spreadIdx === 0 ? 'rgba(255,255,255,0.2)' : 'white' }}>
+                <ChevronLeft size={24} />
+              </button>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,0.4)', fontSize: '11px', letterSpacing: '3px', fontFamily: 'sans-serif', textTransform: 'uppercase' }}>
+                Pages {spreadIdx * 2 + 1}–{spreadIdx * 2 + 2} &nbsp;/&nbsp; {totalSpreads * 2}
+              </p>
+              <button
+                onClick={() => setCurrentSpread(s => Math.min(totalSpreads - 1, s + 1))}
+                disabled={spreadIdx >= totalSpreads - 1}
+                style={{ background: spreadIdx >= totalSpreads - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 48, height: 48, cursor: spreadIdx >= totalSpreads - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: spreadIdx >= totalSpreads - 1 ? 'rgba(255,255,255,0.2)' : 'white' }}>
+                <ChevronRight size={24} />
+              </button>
+            </div>
+
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Navigation */}
       <nav className="bg-white/95 border-b sticky top-0 z-50 px-6 py-4 shadow-sm backdrop-blur-md no-print">
