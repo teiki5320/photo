@@ -238,12 +238,18 @@ function App() {
 
         // ── Templates disponibles ─────────────────────────────────────────
         const TEMPLATES = [
-          { id: 'auto',     label: 'Auto'       },
-          { id: 'big-top',  label: 'Grande photo'},
-          { id: 'grid',     label: 'Grille'      },
-          { id: 'magazine', label: 'Magazine'    },
-          { id: 'strip',    label: 'Bande'       },
-          { id: 'minimal',  label: 'Minimaliste' },
+          { id: 'auto',      label: 'Auto'        },
+          { id: 'big-top',   label: 'Grande photo' },
+          { id: 'grid',      label: 'Grille'       },
+          { id: 'magazine',  label: 'Magazine'     },
+          { id: 'strip',     label: 'Bande'        },
+          { id: 'minimal',   label: 'Minimaliste'  },
+          { id: 'duo',       label: 'Duo'          },
+          { id: 'trio',      label: 'Triptyque'    },
+          { id: 'journal',   label: 'Journal'      },
+          { id: 'portrait',  label: 'Portrait'     },
+          { id: 'mosaique',  label: 'Mosaïque'     },
+          { id: 'carte',     label: 'Carte'        },
         ];
 
         // ── Cadre photo ───────────────────────────────────────────────────
@@ -277,69 +283,137 @@ function App() {
           );
         };
 
-        // ── Miniatures SVG des templates ──────────────────────────────────
+        // ── Miniatures SVG des templates (44×56) ─────────────────────────
         const TemplateIcon = ({ id }) => {
           const bg = '#c8b99a', lt = '#ddd5c2', tx = '#a09080';
           const s = { display: 'block' };
+          const W = 44, H = 56;
           if (id === 'auto') return (
-            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
-              <rect x="2" y="2" width="52" height="30" rx="1" fill={bg}/>
-              <rect x="2" y="36" width="24" height="20" rx="1" fill={lt}/>
-              <rect x="30" y="36" width="24" height="20" rx="1" fill={lt}/>
-              <rect x="2" y="60" width="36" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="66" width="24" height="3" rx="1" fill={tx}/>
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2" width="40" height="22" rx="1" fill={bg}/>
+              <rect x="2" y="27" width="18" height="14" rx="1" fill={lt}/>
+              <rect x="24" y="27" width="18" height="14" rx="1" fill={lt}/>
+              <rect x="2" y="44" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="49" width="20" height="2" rx="1" fill={tx}/>
             </svg>
           );
           if (id === 'big-top') return (
-            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
-              <rect x="2" y="2" width="52" height="36" rx="1" fill={bg}/>
-              <rect x="2" y="42" width="15" height="12" rx="1" fill={lt}/>
-              <rect x="21" y="42" width="15" height="12" rx="1" fill={lt}/>
-              <rect x="40" y="42" width="14" height="12" rx="1" fill={lt}/>
-              <rect x="2" y="58" width="36" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="64" width="24" height="3" rx="1" fill={tx}/>
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2" width="40" height="26" rx="1" fill={bg}/>
+              <rect x="2" y="31" width="11" height="9" rx="1" fill={lt}/>
+              <rect x="17" y="31" width="11" height="9" rx="1" fill={lt}/>
+              <rect x="32" y="31" width="10" height="9" rx="1" fill={lt}/>
+              <rect x="2" y="44" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="49" width="20" height="2" rx="1" fill={tx}/>
             </svg>
           );
           if (id === 'grid') return (
-            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
-              <rect x="2"  y="2"  width="24" height="24" rx="1" fill={bg}/>
-              <rect x="30" y="2"  width="24" height="24" rx="1" fill={lt}/>
-              <rect x="2"  y="30" width="24" height="24" rx="1" fill={lt}/>
-              <rect x="30" y="30" width="24" height="24" rx="1" fill={bg}/>
-              <rect x="2"  y="58" width="36" height="3" rx="1" fill={tx}/>
-              <rect x="2"  y="64" width="24" height="3" rx="1" fill={tx}/>
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2"  width="18" height="18" rx="1" fill={bg}/>
+              <rect x="24" y="2"  width="18" height="18" rx="1" fill={lt}/>
+              <rect x="2"  y="23" width="18" height="18" rx="1" fill={lt}/>
+              <rect x="24" y="23" width="18" height="18" rx="1" fill={bg}/>
+              <rect x="2"  y="44" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="49" width="20" height="2" rx="1" fill={tx}/>
             </svg>
           );
           if (id === 'magazine') return (
-            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
-              <rect x="2" y="2" width="30" height="52" rx="1" fill={bg}/>
-              <rect x="36" y="2"  width="18" height="15" rx="1" fill={lt}/>
-              <rect x="36" y="21" width="18" height="15" rx="1" fill={lt}/>
-              <rect x="36" y="40" width="18" height="14" rx="1" fill={lt}/>
-              <rect x="2" y="58" width="36" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="64" width="24" height="3" rx="1" fill={tx}/>
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2" width="22" height="38" rx="1" fill={bg}/>
+              <rect x="28" y="2"  width="14" height="11" rx="1" fill={lt}/>
+              <rect x="28" y="16" width="14" height="11" rx="1" fill={lt}/>
+              <rect x="28" y="30" width="14" height="10" rx="1" fill={lt}/>
+              <rect x="2" y="44" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="49" width="20" height="2" rx="1" fill={tx}/>
             </svg>
           );
           if (id === 'strip') return (
-            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
-              <rect x="2"  y="2" width="15" height="22" rx="1" fill={bg}/>
-              <rect x="21" y="2" width="15" height="22" rx="1" fill={lt}/>
-              <rect x="40" y="2" width="14" height="22" rx="1" fill={bg}/>
-              <rect x="2" y="28" width="52" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="35" width="46" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="42" width="40" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="49" width="48" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="56" width="36" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="63" width="42" height="3" rx="1" fill={tx}/>
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2" width="11" height="16" rx="1" fill={bg}/>
+              <rect x="17" y="2" width="11" height="16" rx="1" fill={lt}/>
+              <rect x="32" y="2" width="10" height="16" rx="1" fill={bg}/>
+              <rect x="2" y="22" width="40" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="27" width="36" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="32" width="32" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="37" width="38" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="42" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="47" width="34" height="2" rx="1" fill={tx}/>
             </svg>
           );
           if (id === 'minimal') return (
-            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
-              <rect x="8" y="2" width="40" height="36" rx="1" fill={bg}/>
-              <rect x="2" y="44" width="46" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="51" width="38" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="58" width="42" height="3" rx="1" fill={tx}/>
-              <rect x="2" y="65" width="30" height="3" rx="1" fill={tx}/>
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="6" y="2" width="32" height="26" rx="1" fill={bg}/>
+              <rect x="2" y="32" width="36" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="37" width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="42" width="34" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="47" width="24" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'duo') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2" width="18" height="32" rx="1" fill={bg}/>
+              <rect x="24" y="2" width="18" height="32" rx="1" fill={lt}/>
+              <rect x="2" y="38" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="43" width="22" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="48" width="26" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'trio') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2" width="11" height="28" rx="1" fill={bg}/>
+              <rect x="17" y="2" width="11" height="28" rx="1" fill={lt}/>
+              <rect x="32" y="2" width="10" height="28" rx="1" fill={bg}/>
+              <rect x="2" y="34" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="39" width="22" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="44" width="26" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="49" width="18" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'journal') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2"  width="36" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="7"  width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="12" width="34" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="17" width="26" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="24" width="18" height="14" rx="1" fill={bg}/>
+              <rect x="24" y="24" width="18" height="14" rx="1" fill={lt}/>
+              <rect x="2" y="41" width="40" height="13" rx="1" fill={lt}/>
+            </svg>
+          );
+          if (id === 'portrait') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2" width="16" height="40" rx="1" fill={bg}/>
+              <rect x="22" y="2"  width="20" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="7"  width="16" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="12" width="18" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="17" width="14" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="22" width="20" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="27" width="16" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="32" width="18" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="37" width="12" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="46" width="40" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="51" width="30" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'mosaique') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2"  width="22" height="22" rx="1" fill={bg}/>
+              <rect x="28" y="2"  width="14" height="10" rx="1" fill={lt}/>
+              <rect x="28" y="15" width="14" height="10" rx="1" fill={lt}/>
+              <rect x="2"  y="27" width="14" height="13" rx="1" fill={lt}/>
+              <rect x="20" y="27" width="22" height="13" rx="1" fill={bg}/>
+              <rect x="2"  y="44" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="49" width="20" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'carte') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="6" y="2" width="32" height="22" rx="2" fill={bg}/>
+              <rect x="2" y="27" width="40" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="32" width="34" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="37" width="38" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="42" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="47" width="32" height="2" rx="1" fill={tx}/>
             </svg>
           );
           return null;
@@ -422,6 +496,105 @@ function App() {
               </div>
             );
           }
+          if (template === 'duo') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'flex', gap: '3%', minHeight: 0 }}>
+                  <Photo img={images[0]} style={{ flex: 1 }} {...mp(0)} />
+                  {n > 1 && <Photo img={images[1]} style={{ flex: 1 }} {...mp(1)} />}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'trio') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'flex', gap: '3%', minHeight: 0 }}>
+                  {images.slice(0, 3).map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i)} />
+                  ))}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'journal') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: '0 0 30%' }}>{commentNode}</div>
+                <div style={{ flex: 1, display: 'flex', gap: '3%', minHeight: 0 }}>
+                  {images.slice(0, 2).map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i)} />
+                  ))}
+                </div>
+                {n > 2 && (
+                  <div style={{ flex: 1, display: 'flex', gap: '3%', minHeight: 0 }}>
+                    {images.slice(2).map((img, i) => (
+                      <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i + 2)} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+          if (template === 'portrait') {
+            return (
+              <div style={{ flex: 1, display: 'flex', gap: '4%', minHeight: 0 }}>
+                <Photo img={images[0]} style={{ flex: '0 0 38%' }} {...mp(0)} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%' }}>
+                  {commentNode}
+                  {n > 1 && images.slice(1, 3).map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i + 1)} />
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          if (template === 'mosaique') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '3fr 2fr', gridTemplateRows: '1fr 1fr', gap: '3%', minHeight: 0 }}>
+                  <div style={{ gridRow: '1 / 3', position: 'relative', overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                    <img src={imgSrc(images[0])} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="no-print" style={{ position: 'absolute', bottom: 4, right: 4 }}><button onPointerDown={e=>{e.preventDefault();mp(0).onRight?.();}} style={btnS}>›</button></div>
+                  </div>
+                  {[1,2].map(i => n > i ? (
+                    <div key={i} style={{ position: 'relative', overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                      <img src={imgSrc(images[i])} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div className="no-print" style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
+                        {i > 0 ? <button onPointerDown={e=>{e.preventDefault();mp(i).onLeft?.();}} style={btnS}>‹</button> : <span/>}
+                        {i < n-1 ? <button onPointerDown={e=>{e.preventDefault();mp(i).onRight?.();}} style={btnS}>›</button> : <span/>}
+                      </div>
+                    </div>
+                  ) : <div key={i}/>)}
+                </div>
+                {n > 3 && (
+                  <div style={{ flex: '0 0 22%', display: 'flex', gap: '3%' }}>
+                    {images.slice(3).map((img, i) => (
+                      <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i + 3)} />
+                    ))}
+                  </div>
+                )}
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'carte') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4%', minHeight: 0 }}>
+                <div style={{ flex: '0 0 42%', width: '85%', position: 'relative', overflow: 'hidden', border: '6px solid white', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', borderRadius: 4 }}>
+                  <img src={imgSrc(images[0])} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {n > 1 && (
+                    <div className="no-print" style={{ position: 'absolute', bottom: 4, right: 4 }}>
+                      <button onPointerDown={e=>{e.preventDefault();mp(0).onRight?.();}} style={btnS}>›</button>
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1, width: '100%' }}>{commentNode}</div>
+              </div>
+            );
+          }
           // auto : SmartRows
           return (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
@@ -491,12 +664,12 @@ function App() {
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: '22px 18px', display: 'flex', flexDirection: 'column', gap: 24, overflowY: 'auto', height: '100%', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,0.07)' }}>
               <div>
                 <p style={{ margin: '0 0 14px', fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', fontFamily: 'sans-serif' }}>Modèle de page</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {TEMPLATES.map(t => (
                     <button key={t.id} onClick={() => setOv(blockIdx, { layout: t.id })}
-                      style={{ background: currentTemplate === t.id ? 'rgba(200,185,154,0.15)' : 'rgba(255,255,255,0.03)', border: `2px solid ${currentTemplate === t.id ? '#c8b99a' : 'rgba(255,255,255,0.08)'}`, borderRadius: 10, padding: '10px 6px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, transition: 'all 0.15s' }}>
+                      style={{ background: currentTemplate === t.id ? 'rgba(200,185,154,0.15)' : 'rgba(255,255,255,0.03)', border: `2px solid ${currentTemplate === t.id ? '#c8b99a' : 'rgba(255,255,255,0.08)'}`, borderRadius: 8, padding: '8px 4px 6px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, transition: 'all 0.15s' }}>
                       <TemplateIcon id={t.id} />
-                      <span style={{ fontSize: '8px', letterSpacing: '1px', color: currentTemplate === t.id ? '#c8b99a' : 'rgba(255,255,255,0.4)', fontFamily: 'sans-serif', textTransform: 'uppercase' }}>{t.label}</span>
+                      <span style={{ fontSize: '7px', letterSpacing: '0.5px', color: currentTemplate === t.id ? '#c8b99a' : 'rgba(255,255,255,0.4)', fontFamily: 'sans-serif', textTransform: 'uppercase', textAlign: 'center', lineHeight: 1.2 }}>{t.label}</span>
                     </button>
                   ))}
                 </div>
@@ -532,7 +705,7 @@ function App() {
             </div>
 
             {/* Contenu : livre gauche + panneau droite */}
-            <div style={{ flex: 1, display: 'flex', gap: 28, padding: '20px 32px', overflow: 'hidden', minHeight: 0, alignItems: 'center' }} className="no-print">
+            <div style={{ flex: 1, display: 'flex', gap: 28, padding: '20px 32px', overflow: 'hidden', minHeight: 0, alignItems: 'center', justifyContent: 'center' }} className="no-print">
 
               {/* Page (effet livre) */}
               <div style={{ flexShrink: 0, height: 'calc(100vh - 180px)', aspectRatio: '1/1.41', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.65))' }}>
