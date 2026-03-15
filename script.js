@@ -217,7 +217,7 @@ function App() {
         const btnS = { background: 'rgba(0,0,0,0.55)', border: 'none', color: 'white', borderRadius: 3, width: 24, height: 24, cursor: 'pointer', fontSize: 15, lineHeight: '24px', textAlign: 'center', padding: 0, touchAction: 'manipulation' };
         const Photo = ({ src, style, onLeft, onRight }) => (
           <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', position: 'relative', minHeight: 0, minWidth: 0, ...style }}>
-            <img src={src} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={src} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#f5f0ea', display: 'block' }} />
             {(onLeft || onRight) && (
               <div className="no-print" style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
                 {onLeft  ? <button onPointerDown={e=>{e.preventDefault();onLeft(); }} style={btnS}>‹</button> : <span/>}
@@ -232,11 +232,11 @@ function App() {
           const ov = getOv(pageIdx);
           const cur = ov.layout !== undefined ? ov.layout : pageIdx % 4;
           return (
-            <div className="no-print" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, padding: '4px 8px', background: 'rgba(253,252,248,0.96)', borderTop: '1px solid #e8e0d4', boxSizing: 'border-box' }}>
-              <span style={{ fontSize: '8px', letterSpacing: '2px', textTransform: 'uppercase', color: '#b0a090', fontFamily: 'sans-serif', marginRight: 2 }}>Mise en page</span>
+            <div className="no-print" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(253,252,248,0.96)', borderTop: '1px solid #e8e0d4', boxSizing: 'border-box' }}>
+              <span style={{ fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', color: '#b0a090', fontFamily: 'sans-serif', marginRight: 4 }}>Mise en page</span>
               {['A','B','C','D'].map((l, li) => (
                 <button key={li} onPointerDown={() => setOv(pageIdx, { layout: li })}
-                  style={{ padding: '2px 8px', borderRadius: 4, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 'bold', fontFamily: 'sans-serif', background: cur === li ? '#c8b99a' : '#f0ece6', color: cur === li ? 'white' : '#999' }}>
+                  style={{ padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 'bold', fontFamily: 'sans-serif', background: cur === li ? '#c8b99a' : '#f0ece6', color: cur === li ? 'white' : '#999', minWidth: 40 }}>
                   {l}
                 </button>
               ))}
@@ -273,7 +273,7 @@ function App() {
             </p>
           );
 
-          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', paddingBottom: 'calc(6% + 30px)', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
+          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', paddingBottom: 'calc(6% + 44px)', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
           const accentLine = <div style={{ height: '2px', background: 'linear-gradient(to right,#c8b99a,transparent)', marginBottom: '4%' }} />;
           const dateStr = block ? new Date(block.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
           const title = effComment ? effComment.split(' ').slice(0, 4).join(' ') : 'Souvenir';
@@ -303,7 +303,7 @@ function App() {
 
           // Layout B – Grande gauche + titre + petites droite
           if (effLayout === 1) return (
-            <div style={{ ...pg, flexDirection: 'row', paddingBottom: 'calc(6% + 30px)' }}>
+            <div style={{ ...pg, flexDirection: 'row', paddingBottom: 'calc(6% + 44px)' }}>
               <div style={{ flex: 1.3, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
                 <Photo src={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
                 {n >= 4 && <Photo src={effImages[3]} style={{ flex: '0 0 28%' }} {...mp(3)} />}
