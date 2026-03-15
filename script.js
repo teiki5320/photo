@@ -238,18 +238,30 @@ function App() {
 
         // ── Templates disponibles ─────────────────────────────────────────
         const TEMPLATES = [
-          { id: 'auto',      label: 'Auto'        },
-          { id: 'big-top',   label: 'Grande photo' },
-          { id: 'grid',      label: 'Grille'       },
-          { id: 'magazine',  label: 'Magazine'     },
-          { id: 'strip',     label: 'Bande'        },
-          { id: 'minimal',   label: 'Minimaliste'  },
-          { id: 'duo',       label: 'Duo'          },
-          { id: 'trio',      label: 'Triptyque'    },
-          { id: 'journal',   label: 'Journal'      },
-          { id: 'portrait',  label: 'Portrait'     },
-          { id: 'mosaique',  label: 'Mosaïque'     },
-          { id: 'carte',     label: 'Carte'        },
+          { id: 'auto',       label: 'Auto'         },
+          { id: 'big-top',    label: 'Grande photo'  },
+          { id: 'grid',       label: 'Grille'        },
+          { id: 'magazine',   label: 'Magazine'      },
+          { id: 'strip',      label: 'Bande'         },
+          { id: 'minimal',    label: 'Minimaliste'   },
+          { id: 'duo',        label: 'Duo'           },
+          { id: 'trio',       label: 'Triptyque'     },
+          { id: 'journal',    label: 'Journal'       },
+          { id: 'portrait',   label: 'Portrait'      },
+          { id: 'mosaique',   label: 'Mosaïque'      },
+          { id: 'carte',      label: 'Carte'         },
+          { id: 'panoramique',label: 'Panoramique'   },
+          { id: 'texte-left', label: 'Texte gauche'  },
+          { id: 'grand-bas',  label: 'Grand bas'     },
+          { id: 'deux-rangs', label: 'Deux rangs'    },
+          { id: 'pleine',     label: 'Pleine page'   },
+          { id: 'six',        label: 'Six photos'    },
+          { id: 'manchette',  label: 'Manchette'     },
+          { id: 'polaroid',   label: 'Polaroid'      },
+          { id: 'encadre',    label: 'Encadré'       },
+          { id: 'large-texte',label: 'Long texte'    },
+          { id: 'col3',       label: '3 colonnes'    },
+          { id: 'diptyque-h', label: 'Diptyque H'    },
         ];
 
         // ── Cadre photo ───────────────────────────────────────────────────
@@ -416,6 +428,131 @@ function App() {
               <rect x="2" y="47" width="32" height="2" rx="1" fill={tx}/>
             </svg>
           );
+          if (id === 'panoramique') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2" width="40" height="14" rx="1" fill={bg}/>
+              <rect x="2" y="20" width="38" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="25" width="32" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="30" width="36" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="35" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="40" width="34" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="45" width="24" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="50" width="30" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'texte-left') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2"  width="14" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="7"  width="16" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="12" width="12" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="17" width="15" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="22" width="11" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="27" width="14" height="2" rx="1" fill={tx}/>
+              <rect x="22" y="2"  width="20" height="16" rx="1" fill={bg}/>
+              <rect x="22" y="21" width="20" height="16" rx="1" fill={lt}/>
+              <rect x="22" y="40" width="20" height="14" rx="1" fill={bg}/>
+            </svg>
+          );
+          if (id === 'grand-bas') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2"  width="11" height="10" rx="1" fill={bg}/>
+              <rect x="17" y="2"  width="11" height="10" rx="1" fill={lt}/>
+              <rect x="32" y="2"  width="10" height="10" rx="1" fill={bg}/>
+              <rect x="2"  y="16" width="40" height="24" rx="1" fill={lt}/>
+              <rect x="2"  y="44" width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="49" width="22" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'deux-rangs') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2"  width="18" height="16" rx="1" fill={bg}/>
+              <rect x="24" y="2"  width="18" height="16" rx="1" fill={lt}/>
+              <rect x="2"  y="22" width="18" height="16" rx="1" fill={lt}/>
+              <rect x="24" y="22" width="18" height="16" rx="1" fill={bg}/>
+              <rect x="2"  y="42" width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="47" width="22" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'pleine') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2" width="40" height="52" rx="1" fill={bg}/>
+              <rect x="4" y="46" width="24" height="2" rx="1" fill="rgba(255,255,255,0.7)"/>
+              <rect x="4" y="50" width="16" height="2" rx="1" fill="rgba(255,255,255,0.5)"/>
+            </svg>
+          );
+          if (id === 'six') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2"  width="11" height="12" rx="1" fill={bg}/>
+              <rect x="17" y="2"  width="11" height="12" rx="1" fill={lt}/>
+              <rect x="32" y="2"  width="10" height="12" rx="1" fill={bg}/>
+              <rect x="2"  y="18" width="11" height="12" rx="1" fill={lt}/>
+              <rect x="17" y="18" width="11" height="12" rx="1" fill={bg}/>
+              <rect x="32" y="18" width="10" height="12" rx="1" fill={lt}/>
+              <rect x="2"  y="34" width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="39" width="24" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="44" width="28" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'manchette') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2" width="40" height="18" rx="1" fill={bg}/>
+              <rect x="2" y="24" width="18" height="14" rx="1" fill={lt}/>
+              <rect x="24" y="24" width="18" height="14" rx="1" fill={lt}/>
+              <rect x="2"  y="42" width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="47" width="22" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'polaroid') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2"  width="17" height="20" rx="1" fill="white" stroke={lt} strokeWidth="1"/>
+              <rect x="3"  y="3"  width="15" height="13" rx="1" fill={bg}/>
+              <rect x="26" y="2"  width="16" height="20" rx="1" fill="white" stroke={lt} strokeWidth="1"/>
+              <rect x="27" y="3"  width="14" height="13" rx="1" fill={lt}/>
+              <rect x="2"  y="26" width="17" height="20" rx="1" fill="white" stroke={lt} strokeWidth="1"/>
+              <rect x="3"  y="27" width="15" height="13" rx="1" fill={lt}/>
+              <rect x="26" y="26" width="16" height="20" rx="1" fill="white" stroke={lt} strokeWidth="1"/>
+              <rect x="27" y="27" width="14" height="13" rx="1" fill={bg}/>
+              <rect x="2"  y="50" width="28" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'encadre') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="4" y="2" width="36" height="28" rx="1" fill="white" stroke={lt} strokeWidth="2"/>
+              <rect x="8" y="6" width="28" height="20" rx="1" fill={bg}/>
+              <rect x="2"  y="34" width="38" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="39" width="32" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="44" width="36" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="49" width="26" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'large-texte') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="10" y="2" width="24" height="16" rx="1" fill={bg}/>
+              <rect x="2"  y="22" width="40" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="27" width="36" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="32" width="40" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="37" width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="42" width="38" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="47" width="24" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'col3') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2"  y="2" width="11" height="36" rx="1" fill={bg}/>
+              <rect x="17" y="2" width="11" height="36" rx="1" fill={lt}/>
+              <rect x="32" y="2" width="10" height="36" rx="1" fill={bg}/>
+              <rect x="2"  y="42" width="30" height="2" rx="1" fill={tx}/>
+              <rect x="2"  y="47" width="22" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'diptyque-h') return (
+            <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={s}>
+              <rect x="2" y="2"  width="40" height="18" rx="1" fill={bg}/>
+              <rect x="2" y="23" width="40" height="18" rx="1" fill={lt}/>
+              <rect x="2" y="45" width="28" height="2" rx="1" fill={tx}/>
+              <rect x="2" y="50" width="20" height="2" rx="1" fill={tx}/>
+            </svg>
+          );
           return null;
         };
 
@@ -493,6 +630,166 @@ function App() {
                   <Photo img={images[0]} style={{ maxWidth: '80%', flex: imgAspect(images[0]) }} {...mp(0)} />
                 </div>
                 <div style={{ flex: 1 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'panoramique') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: '0 0 22%' }}>
+                  <Photo img={images[0]} style={{ height: '100%', width: '100%' }} {...mp(0)} />
+                </div>
+                <div style={{ flex: 1 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'texte-left') {
+            return (
+              <div style={{ flex: 1, display: 'flex', gap: '4%', minHeight: 0 }}>
+                <div style={{ flex: 2 }}>{commentNode}</div>
+                <div style={{ flex: 3, display: 'flex', flexDirection: 'column', gap: '3%' }}>
+                  {images.map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i)} />
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          if (template === 'grand-bas') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                {n > 1 && (
+                  <div style={{ flex: '0 0 20%', display: 'flex', gap: '3%' }}>
+                    {images.slice(0, -1).map((img, i) => (
+                      <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i)} />
+                    ))}
+                  </div>
+                )}
+                <Photo img={images[n - 1]} style={{ flex: 1.5 }} {...mp(n - 1)} />
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'deux-rangs') {
+            const half = Math.ceil(n / 2);
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'flex', gap: '3%' }}>
+                  {images.slice(0, half).map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i)} />
+                  ))}
+                </div>
+                <div style={{ flex: 1, display: 'flex', gap: '3%' }}>
+                  {images.slice(half).map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i + half)} />
+                  ))}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'pleine') {
+            return (
+              <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+                <Photo img={images[0]} style={{ position: 'absolute', inset: 0 }} {...mp(0)} />
+                <div style={{ position: 'absolute', bottom: 8, left: 8, right: 8 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'six') {
+            const take = images.slice(0, 6);
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gridTemplateRows: 'repeat(2,1fr)', gap: '3%', minHeight: 0 }}>
+                  {take.map((img, i) => (
+                    <div key={i} style={{ position: 'relative', overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                      <img src={imgSrc(img)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div className="no-print" style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
+                        {i > 0 ? <button onPointerDown={e=>{e.preventDefault();mp(i).onLeft?.();}} style={btnS}>‹</button> : <span/>}
+                        {i < take.length-1 ? <button onPointerDown={e=>{e.preventDefault();mp(i).onRight?.();}} style={btnS}>›</button> : <span/>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'manchette') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <Photo img={images[0]} style={{ flex: '0 0 30%' }} {...mp(0)} />
+                <div style={{ flex: 1, display: 'flex', gap: '3%' }}>
+                  {images.slice(1, 3).map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i + 1)} />
+                  ))}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'polaroid') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gridTemplateRows: 'repeat(2,1fr)', gap: '4%', minHeight: 0 }}>
+                  {images.slice(0, 4).map((img, i) => (
+                    <div key={i} style={{ background: 'white', padding: '4px 4px 14px', boxShadow: '0 3px 10px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                        <img src={imgSrc(img)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <div className="no-print" style={{ position: 'absolute', bottom: 14, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
+                        {i > 0 ? <button onPointerDown={e=>{e.preventDefault();mp(i).onLeft?.();}} style={btnS}>‹</button> : <span/>}
+                        {i < Math.min(n,4)-1 ? <button onPointerDown={e=>{e.preventDefault();mp(i).onRight?.();}} style={btnS}>›</button> : <span/>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'encadre') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4%', minHeight: 0 }}>
+                <div style={{ flex: '0 0 52%', width: '88%', position: 'relative', overflow: 'hidden', border: '8px solid white', boxShadow: '0 0 0 2px #d4c5a9, 0 6px 24px rgba(0,0,0,0.2)' }}>
+                  <img src={imgSrc(images[0])} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <div style={{ flex: 1, width: '100%' }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'large-texte') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
+                <div style={{ flex: '0 0 26%', display: 'flex', justifyContent: 'center' }}>
+                  <Photo img={images[0]} style={{ flex: imgAspect(images[0]), maxWidth: '60%' }} {...mp(0)} />
+                </div>
+                <div style={{ flex: 1 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'col3') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'flex', gap: '3%', minHeight: 0 }}>
+                  {[0,1,2].map(i => n > i ? (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%' }}>
+                      {images.filter((_,j) => j % 3 === i).map((img, k) => (
+                        <Photo key={k} img={img} style={{ flex: 1 }} {...mp(i + k * 3)} />
+                      ))}
+                    </div>
+                  ) : <div key={i} style={{ flex: 1 }}/>)}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'diptyque-h') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <Photo img={images[0]} style={{ flex: 1 }} {...mp(0)} />
+                {n > 1 && <Photo img={images[1]} style={{ flex: 1 }} {...mp(1)} />}
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
               </div>
             );
           }
@@ -675,12 +972,14 @@ function App() {
                 </div>
               </div>
               <div>
-                <p style={{ margin: '0 0 14px', fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', fontFamily: 'sans-serif' }}>Taille du commentaire</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <input type="range" min="9" max="18" value={commentFontSize}
-                    onChange={e => { const v = Number(e.target.value); setCommentFontSize(v); try { localStorage.setItem('journalphoto_fontsize', String(v)); } catch {} }}
-                    style={{ flex: 1, accentColor: '#c8b99a' }} />
-                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)', fontFamily: 'sans-serif', width: 36, textAlign: 'right', flexShrink: 0 }}>{commentFontSize}px</span>
+                <p style={{ margin: '0 0 10px', fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', fontFamily: 'sans-serif' }}>Taille du commentaire</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {[9,10,11,12,13,14,15,16,18].map(v => (
+                    <button key={v} onClick={() => { setCommentFontSize(v); try { localStorage.setItem('journalphoto_fontsize', String(v)); } catch {} }}
+                      style={{ background: commentFontSize === v ? '#c8b99a' : 'rgba(255,255,255,0.07)', border: `1px solid ${commentFontSize === v ? '#c8b99a' : 'rgba(255,255,255,0.12)'}`, borderRadius: 6, color: commentFontSize === v ? '#1c1c2e' : 'rgba(255,255,255,0.5)', fontSize: '10px', fontFamily: 'sans-serif', padding: '5px 4px', cursor: 'pointer', flex: 1, transition: 'all 0.12s' }}>
+                      {v}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -708,14 +1007,14 @@ function App() {
             <div style={{ flex: 1, display: 'flex', gap: 28, padding: '20px 32px', overflow: 'hidden', minHeight: 0, alignItems: 'center', justifyContent: 'center' }} className="no-print">
 
               {/* Page (effet livre) */}
-              <div style={{ flexShrink: 0, height: 'calc(100vh - 180px)', aspectRatio: '1/1.41', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.65))' }}>
+              <div style={{ flexShrink: 0, height: 'calc(100vh - 260px)', aspectRatio: '1/1.41', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.65))' }}>
                 <div style={{ width: '100%', height: '100%', borderRadius: '3px 0 0 3px', overflow: 'hidden', boxShadow: 'inset -10px 0 20px rgba(0,0,0,0.12), 6px 0 10px rgba(0,0,0,0.35)' }}>
                   {currentEntry ? <ScrapbookPage block={currentEntry.block} blockIdx={currentEntry.blockIdx} /> : <EmptyPage />}
                 </div>
               </div>
 
               {/* Panneau paramètres */}
-              <div style={{ flex: 1, minWidth: 200, maxWidth: 320, height: 'calc(100vh - 180px)' }}>
+              <div style={{ flex: 1, minWidth: 200, maxWidth: 340, height: 'calc(100vh - 260px)' }}>
                 {currentEntry ? <SettingsPanel blockIdx={currentEntry.blockIdx} /> : null}
               </div>
 
