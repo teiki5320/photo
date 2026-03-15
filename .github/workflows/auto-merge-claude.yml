@@ -1,0 +1,19 @@
+name: Auto-merge branches claude/
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  auto-merge:
+    # Ne s'exécute que pour les branches commençant par claude/
+    if: startsWith(github.head_ref, 'claude/')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - name: Merge automatique
+        run: gh pr merge "${{ github.event.pull_request.number }}" --merge --auto
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
