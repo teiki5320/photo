@@ -1,3 +1,4 @@
+// ─── JournalPhoto Studio – v1.3 ──────────────────────────────────────────────
 // ─── React hooks ─────────────────────────────────────────────────────────────
 const { useState, useEffect, useMemo } = React;
 
