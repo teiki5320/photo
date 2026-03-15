@@ -80,6 +80,9 @@ function App() {
   const [newAlbumName,    setNewAlbumName]    = useState('');
   const [isPrintMode,    setIsPrintMode]    = useState(false);
   const [currentSpread,  setCurrentSpread]  = useState(0);
+  const [commentFontSize, setCommentFontSize] = useState(() => {
+    try { return Number(localStorage.getItem('journalphoto_fontsize') || '12'); } catch { return 12; }
+  });
 
   const [pageOverrides, setPageOverrides] = useState(() => {
     try { return JSON.parse(localStorage.getItem('journalphoto_overrides') || '{}'); } catch { return {}; }
@@ -224,32 +227,27 @@ function App() {
       {/* ── Album Studio ─────────────────────────────────────────────────── */}
       {isPrintMode && (() => {
 
-        // Auto 2-page si ≥ 4 photos
-        const pageList = (() => {
-          const list = [];
-          displayBlocks.forEach((block, blockIdx) => {
-            const ov   = pageOverrides[`${openedAlbum}:${blockIdx}`] || {};
-            const imgs = ov.images || block.images || [];
-            if (imgs.length >= 4) {
-              list.push({ block, blockIdx, half: 'A' });
-              list.push({ block, blockIdx, half: 'B' });
-            } else {
-              list.push({ block, blockIdx, half: null });
-            }
-          });
-          return list;
-        })();
-
-        const totalSpreads = Math.max(1, Math.ceil(pageList.length / 2));
-        const spreadIdx    = Math.min(currentSpread, totalSpreads - 1);
-        const leftEntry    = pageList[spreadIdx * 2]     || null;
-        const rightEntry   = pageList[spreadIdx * 2 + 1] || null;
+        // Une page par bloc
+        const pageList = displayBlocks.map((block, blockIdx) => ({ block, blockIdx }));
+        const totalPages = Math.max(1, pageList.length);
+        const pageIdx    = Math.min(currentSpread, totalPages - 1);
+        const currentEntry = pageList[pageIdx] || null;
 
         const getOv = idx => pageOverrides[`${openedAlbum}:${idx}`] || {};
         const setOv = (idx, patch) => setPageOverride(`${openedAlbum}:${idx}`, patch);
 
-        // ── Cadre photo avec aspect automatique ──────────────────────────
-        const btnS = { background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: 3, width: 26, height: 26, cursor: 'pointer', fontSize: 16, lineHeight: '26px', textAlign: 'center', padding: 0, touchAction: 'manipulation' };
+        // ── Templates disponibles ─────────────────────────────────────────
+        const TEMPLATES = [
+          { id: 'auto',     label: 'Auto'       },
+          { id: 'big-top',  label: 'Grande photo'},
+          { id: 'grid',     label: 'Grille'      },
+          { id: 'magazine', label: 'Magazine'    },
+          { id: 'strip',    label: 'Bande'       },
+          { id: 'minimal',  label: 'Minimaliste' },
+        ];
+
+        // ── Cadre photo ───────────────────────────────────────────────────
+        const btnS = { background: 'rgba(0,0,0,0.5)', border: 'none', color: 'white', borderRadius: 3, width: 22, height: 22, cursor: 'pointer', fontSize: 14, lineHeight: '22px', textAlign: 'center', padding: 0, touchAction: 'manipulation' };
         const Photo = ({ img, style, onLeft, onRight }) => (
           <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', position: 'relative', minHeight: 0, minWidth: 0, ...style }}>
             <img src={imgSrc(img)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -262,19 +260,16 @@ function App() {
           </div>
         );
 
-        // ── Rendu intelligent de rangées ─────────────────────────────────
-        // Chaque cadre prend la forme naturelle de sa photo via flex proportionnel
+        // ── SmartRows (auto) ──────────────────────────────────────────────
         const SmartRows = ({ images, mp }) => {
           if (!images.length) return null;
           const rows = buildRows(images);
           return (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
               {rows.map((row, ri) => (
                 <div key={ri} style={{ flex: rowFlex(row, images), display: 'flex', gap: '3%' }}>
                   {row.map((imgIdx, pi) => (
-                    <Photo key={pi} img={images[imgIdx]}
-                      style={{ flex: imgAspect(images[imgIdx]) }}
-                      {...mp(imgIdx)} />
+                    <Photo key={pi} img={images[imgIdx]} style={{ flex: imgAspect(images[imgIdx]) }} {...mp(imgIdx)} />
                   ))}
                 </div>
               ))}
@@ -282,9 +277,162 @@ function App() {
           );
         };
 
+        // ── Miniatures SVG des templates ──────────────────────────────────
+        const TemplateIcon = ({ id }) => {
+          const bg = '#c8b99a', lt = '#ddd5c2', tx = '#a09080';
+          const s = { display: 'block' };
+          if (id === 'auto') return (
+            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
+              <rect x="2" y="2" width="52" height="30" rx="1" fill={bg}/>
+              <rect x="2" y="36" width="24" height="20" rx="1" fill={lt}/>
+              <rect x="30" y="36" width="24" height="20" rx="1" fill={lt}/>
+              <rect x="2" y="60" width="36" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="66" width="24" height="3" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'big-top') return (
+            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
+              <rect x="2" y="2" width="52" height="36" rx="1" fill={bg}/>
+              <rect x="2" y="42" width="15" height="12" rx="1" fill={lt}/>
+              <rect x="21" y="42" width="15" height="12" rx="1" fill={lt}/>
+              <rect x="40" y="42" width="14" height="12" rx="1" fill={lt}/>
+              <rect x="2" y="58" width="36" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="64" width="24" height="3" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'grid') return (
+            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
+              <rect x="2"  y="2"  width="24" height="24" rx="1" fill={bg}/>
+              <rect x="30" y="2"  width="24" height="24" rx="1" fill={lt}/>
+              <rect x="2"  y="30" width="24" height="24" rx="1" fill={lt}/>
+              <rect x="30" y="30" width="24" height="24" rx="1" fill={bg}/>
+              <rect x="2"  y="58" width="36" height="3" rx="1" fill={tx}/>
+              <rect x="2"  y="64" width="24" height="3" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'magazine') return (
+            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
+              <rect x="2" y="2" width="30" height="52" rx="1" fill={bg}/>
+              <rect x="36" y="2"  width="18" height="15" rx="1" fill={lt}/>
+              <rect x="36" y="21" width="18" height="15" rx="1" fill={lt}/>
+              <rect x="36" y="40" width="18" height="14" rx="1" fill={lt}/>
+              <rect x="2" y="58" width="36" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="64" width="24" height="3" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'strip') return (
+            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
+              <rect x="2"  y="2" width="15" height="22" rx="1" fill={bg}/>
+              <rect x="21" y="2" width="15" height="22" rx="1" fill={lt}/>
+              <rect x="40" y="2" width="14" height="22" rx="1" fill={bg}/>
+              <rect x="2" y="28" width="52" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="35" width="46" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="42" width="40" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="49" width="48" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="56" width="36" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="63" width="42" height="3" rx="1" fill={tx}/>
+            </svg>
+          );
+          if (id === 'minimal') return (
+            <svg viewBox="0 0 56 72" width="56" height="72" style={s}>
+              <rect x="8" y="2" width="40" height="36" rx="1" fill={bg}/>
+              <rect x="2" y="44" width="46" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="51" width="38" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="58" width="42" height="3" rx="1" fill={tx}/>
+              <rect x="2" y="65" width="30" height="3" rx="1" fill={tx}/>
+            </svg>
+          );
+          return null;
+        };
+
+        // ── Rendu selon template ──────────────────────────────────────────
+        const renderLayout = (template, images, mp, commentNode) => {
+          const n = images.length;
+          if (template === 'big-top') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <Photo img={images[0]} style={{ flex: 2.5 }} {...mp(0)} />
+                {n > 1 && (
+                  <div style={{ flex: 1, display: 'flex', gap: '3%' }}>
+                    {images.slice(1).map((img, i) => (
+                      <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i + 1)} />
+                    ))}
+                  </div>
+                )}
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'grid') {
+            const cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
+            const rows = Math.ceil(n / cols);
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gridTemplateRows: `repeat(${rows}, 1fr)`, gap: '3%', minHeight: 0 }}>
+                  {images.map((img, i) => (
+                    <div key={i} style={{ position: 'relative', overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                      <img src={imgSrc(img)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <div className="no-print" style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
+                        {i > 0     ? <button onPointerDown={e=>{e.preventDefault();mp(i).onLeft?.(); }} style={btnS}>‹</button> : <span/>}
+                        {i < n - 1 ? <button onPointerDown={e=>{e.preventDefault();mp(i).onRight?.();}} style={btnS}>›</button> : <span/>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'magazine') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+                <div style={{ flex: 1, display: 'flex', gap: '3%', minHeight: 0 }}>
+                  <Photo img={images[0]} style={{ flex: 3 }} {...mp(0)} />
+                  {n > 1 && (
+                    <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '3%' }}>
+                      {images.slice(1).map((img, i) => (
+                        <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i + 1)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div style={{ flexShrink: 0 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'strip') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
+                <div style={{ flex: '0 0 28%', display: 'flex', gap: '3%' }}>
+                  {images.map((img, i) => (
+                    <Photo key={i} img={img} style={{ flex: imgAspect(img) }} {...mp(i)} />
+                  ))}
+                </div>
+                <div style={{ flex: 1 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          if (template === 'minimal') {
+            return (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
+                <div style={{ flex: '0 0 50%', display: 'flex', justifyContent: 'center' }}>
+                  <Photo img={images[0]} style={{ maxWidth: '80%', flex: imgAspect(images[0]) }} {...mp(0)} />
+                </div>
+                <div style={{ flex: 1 }}>{commentNode}</div>
+              </div>
+            );
+          }
+          // auto : SmartRows
+          return (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3%', minHeight: 0 }}>
+              <SmartRows images={images} mp={mp} />
+              <div style={{ flexShrink: 0 }}>{commentNode}</div>
+            </div>
+          );
+        };
 
         // ── Page scrapbook ────────────────────────────────────────────────
-        const ScrapbookPage = ({ block, blockIdx, half }) => {
+        const ScrapbookPage = ({ block, blockIdx }) => {
           if (!block) return (
             <div style={{ background: '#fdfcf8', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <p style={{ color: '#ddd', fontStyle: 'italic', fontFamily: 'Georgia,serif', fontSize: '13px' }}>— page vide —</p>
@@ -292,72 +440,39 @@ function App() {
           );
 
           const ov         = getOv(blockIdx);
-          const allImages  = ov.images  || block.images || [];
+          const images     = ov.images  || block.images || [];
           const effComment = ov.comment !== undefined ? ov.comment : (block.comment || '');
-          const splitAt    = Math.ceil(allImages.length / 2);
-
-          // Sous-ensemble selon la moitié
-          const effImages  = half === 'A' ? allImages.slice(0, splitAt)
-                           : half === 'B' ? allImages.slice(splitAt)
-                           : allImages;
-          const startIdx   = half === 'B' ? splitAt : 0;
-          const n          = effImages.length;
+          const template   = ov.layout  || 'auto';
+          const n          = images.length;
           const onOv       = patch => setOv(blockIdx, patch);
 
           const moveImg = (i, j) => {
-            const imgs = [...allImages];
-            [imgs[startIdx+i], imgs[startIdx+j]] = [imgs[startIdx+j], imgs[startIdx+i]];
+            const imgs = [...images];
+            [imgs[i], imgs[j]] = [imgs[j], imgs[i]];
             onOv({ images: imgs });
           };
           const mp = i => ({
-            onLeft:  i > 0     ? () => moveImg(i, i-1) : undefined,
-            onRight: i < n - 1 ? () => moveImg(i, i+1) : undefined,
+            onLeft:  i > 0     ? () => moveImg(i, i - 1) : undefined,
+            onRight: i < n - 1 ? () => moveImg(i, i + 1) : undefined,
           });
 
-          const commentStyle = { fontStyle: 'italic', color: '#444', fontSize: '12px', lineHeight: 1.5, fontFamily: 'Georgia,serif', outline: 'none', borderBottom: '1px dashed rgba(200,185,154,0.6)', cursor: 'text', margin: 0, minHeight: '1em', overflow: 'hidden' };
-          const CommentP = ({ style: s = {} }) => (
+          const dateStr   = new Date(block.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+          const dateStyle = { margin: 0, fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' };
+          const accentLine = <div style={{ height: '2px', background: 'linear-gradient(to right,#c8b99a,transparent)', marginBottom: '3%', flexShrink: 0 }} />;
+
+          const commentNode = (
             <p contentEditable suppressContentEditableWarning
-              onBlur={e => onOv({ comment: e.target.innerText.trim().slice(0, 400) })}
-              style={{ ...commentStyle, ...s }}>
+              onBlur={e => onOv({ comment: e.target.innerText.trim().slice(0, 600) })}
+              style={{ margin: 0, fontStyle: 'italic', color: '#444', fontSize: `${commentFontSize}px`, lineHeight: 1.6, fontFamily: 'Georgia,serif', outline: 'none', borderBottom: '1px dashed rgba(200,185,154,0.6)', cursor: 'text', overflow: 'hidden' }}>
               {effComment || '—'}
             </p>
           );
 
-          const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
-          const accentLine = <div style={{ height: '2px', background: 'linear-gradient(to right,#c8b99a,transparent)', marginBottom: '4%' }} />;
-          const dateStr   = new Date(block.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-          const dateStyle = { margin: 0, fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' };
-          // ── Demi-pages (auto 2P) : toujours SmartRows ────────────────
-          if (half === 'A') return (
-            <div style={pg}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
-                <p style={dateStyle}>{dateStr}</p>
-                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', color: '#c8b99a', fontFamily: 'sans-serif' }}>1 / 2</p>
-              </div>
-              {accentLine}
-              <SmartRows images={effImages} mp={mp} />
-            </div>
-          );
-
-          if (half === 'B') return (
-            <div style={pg}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
-                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', color: '#c8b99a', fontFamily: 'sans-serif' }}>2 / 2</p>
-                <p style={dateStyle}>{dateStr}</p>
-              </div>
-              {accentLine}
-              <SmartRows images={effImages} mp={mp} />
-              <CommentP style={{ margin: '3% 0 0' }} />
-            </div>
-          );
-
-          // Page simple : disposition 100% automatique
           return (
-            <div style={pg}>
-              <div style={{ marginBottom: '2%' }}><p style={dateStyle}>{dateStr}</p></div>
+            <div style={{ background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
+              <div style={{ marginBottom: '3%', flexShrink: 0 }}><p style={dateStyle}>{dateStr}</p></div>
               {accentLine}
-              <SmartRows images={effImages} mp={mp} />
-              <CommentP style={{ margin: '3% 0 0' }} />
+              {renderLayout(template, images, mp, commentNode)}
             </div>
           );
         };
@@ -367,6 +482,37 @@ function App() {
             <p style={{ color: '#ddd', fontStyle: 'italic', fontFamily: 'Georgia,serif', fontSize: '13px' }}>— page vide —</p>
           </div>
         );
+
+        // ── Panneau de paramètres ─────────────────────────────────────────
+        const SettingsPanel = ({ blockIdx }) => {
+          const ov = getOv(blockIdx);
+          const currentTemplate = ov.layout || 'auto';
+          return (
+            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: '22px 18px', display: 'flex', flexDirection: 'column', gap: 24, overflowY: 'auto', height: '100%', boxSizing: 'border-box', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div>
+                <p style={{ margin: '0 0 14px', fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', fontFamily: 'sans-serif' }}>Modèle de page</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  {TEMPLATES.map(t => (
+                    <button key={t.id} onClick={() => setOv(blockIdx, { layout: t.id })}
+                      style={{ background: currentTemplate === t.id ? 'rgba(200,185,154,0.15)' : 'rgba(255,255,255,0.03)', border: `2px solid ${currentTemplate === t.id ? '#c8b99a' : 'rgba(255,255,255,0.08)'}`, borderRadius: 10, padding: '10px 6px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, transition: 'all 0.15s' }}>
+                      <TemplateIcon id={t.id} />
+                      <span style={{ fontSize: '8px', letterSpacing: '1px', color: currentTemplate === t.id ? '#c8b99a' : 'rgba(255,255,255,0.4)', fontFamily: 'sans-serif', textTransform: 'uppercase' }}>{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p style={{ margin: '0 0 14px', fontSize: '9px', letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', fontFamily: 'sans-serif' }}>Taille du commentaire</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input type="range" min="9" max="18" value={commentFontSize}
+                    onChange={e => { const v = Number(e.target.value); setCommentFontSize(v); try { localStorage.setItem('journalphoto_fontsize', String(v)); } catch {} }}
+                    style={{ flex: 1, accentColor: '#c8b99a' }} />
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.55)', fontFamily: 'sans-serif', width: 36, textAlign: 'right', flexShrink: 0 }}>{commentFontSize}px</span>
+                </div>
+              </div>
+            </div>
+          );
+        };
 
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: '#1c1c2e', display: 'flex', flexDirection: 'column' }}>
@@ -385,30 +531,36 @@ function App() {
               </button>
             </div>
 
-            {/* Livre */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 40px', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', width: '100%', maxWidth: 960, aspectRatio: '2/1.4', filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.7))' }}>
-                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '6px 0 0 6px', overflow: 'hidden', boxShadow: 'inset -6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
-                  {leftEntry ? <ScrapbookPage block={leftEntry.block} blockIdx={leftEntry.blockIdx} half={leftEntry.half} /> : <EmptyPage />}
-                </div>
-                <div style={{ width: 10, background: 'linear-gradient(to right,#bbb,#f0ede8,#bbb)', flexShrink: 0, boxShadow: 'inset 0 0 6px rgba(0,0,0,0.2)' }} />
-                <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '0 6px 6px 0', overflow: 'hidden', boxShadow: 'inset 6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
-                  {rightEntry ? <ScrapbookPage block={rightEntry.block} blockIdx={rightEntry.blockIdx} half={rightEntry.half} /> : <EmptyPage />}
+            {/* Contenu : livre gauche + panneau droite */}
+            <div style={{ flex: 1, display: 'flex', gap: 28, padding: '20px 32px', overflow: 'hidden', minHeight: 0, alignItems: 'stretch' }} className="no-print">
+
+              {/* Page (effet livre) */}
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ height: '100%', aspectRatio: '1/1.41', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.65))' }}>
+                  <div style={{ width: '100%', height: '100%', borderRadius: '3px 0 0 3px', overflow: 'hidden', boxShadow: 'inset -10px 0 20px rgba(0,0,0,0.12), 6px 0 10px rgba(0,0,0,0.35)' }}>
+                    {currentEntry ? <ScrapbookPage block={currentEntry.block} blockIdx={currentEntry.blockIdx} /> : <EmptyPage />}
+                  </div>
                 </div>
               </div>
+
+              {/* Panneau paramètres */}
+              <div style={{ flex: 1, minWidth: 220, maxWidth: 320 }}>
+                {currentEntry ? <SettingsPanel blockIdx={currentEntry.blockIdx} /> : null}
+              </div>
+
             </div>
 
             {/* Navigation */}
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24, padding: '16px 24px', flexShrink: 0 }} className="no-print">
-              <button onClick={() => setCurrentSpread(s => Math.max(0, s-1))} disabled={spreadIdx === 0}
-                style={{ background: spreadIdx===0?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:48, height:48, cursor:spreadIdx===0?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:spreadIdx===0?'rgba(255,255,255,0.2)':'white' }}>
+              <button onClick={() => setCurrentSpread(s => Math.max(0, s - 1))} disabled={pageIdx === 0}
+                style={{ background: pageIdx===0?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:48, height:48, cursor:pageIdx===0?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:pageIdx===0?'rgba(255,255,255,0.2)':'white' }}>
                 <ChevronLeft size={24} />
               </button>
               <p style={{ margin: 0, color: 'rgba(255,255,255,0.4)', fontSize: '11px', letterSpacing: '3px', fontFamily: 'sans-serif', textTransform: 'uppercase' }}>
-                Pages {spreadIdx*2+1}–{spreadIdx*2+2} &nbsp;/&nbsp; {totalSpreads*2}
+                Page {pageIdx + 1} / {totalPages}
               </p>
-              <button onClick={() => setCurrentSpread(s => Math.min(totalSpreads-1, s+1))} disabled={spreadIdx>=totalSpreads-1}
-                style={{ background: spreadIdx>=totalSpreads-1?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:48, height:48, cursor:spreadIdx>=totalSpreads-1?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:spreadIdx>=totalSpreads-1?'rgba(255,255,255,0.2)':'white' }}>
+              <button onClick={() => setCurrentSpread(s => Math.min(totalPages - 1, s + 1))} disabled={pageIdx >= totalPages - 1}
+                style={{ background: pageIdx>=totalPages-1?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.12)', border:'none', borderRadius:'50%', width:48, height:48, cursor:pageIdx>=totalPages-1?'default':'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:pageIdx>=totalPages-1?'rgba(255,255,255,0.2)':'white' }}>
                 <ChevronRight size={24} />
               </button>
             </div>
