@@ -198,11 +198,14 @@ function App() {
         const rightBlock   = displayBlocks[spreadIdx * 2 + 1];
 
         // ── Composant page scrapbook ─────────────────────────────────────
-        // position:relative + img absolute = l'image remplit TOUJOURS son cadre
-        // quelle que soit la source de hauteur du parent (flex, %, px…)
+        // display:flex + align-items:stretch → l'img se redimensionne via flex
+        // (évite le bug Safari iOS où height:100% ne résout pas sur un absolu
+        //  dont le parent tient sa hauteur de flex:1)
         const Photo = ({ src, style }) => (
-          <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', position: 'relative', minHeight: 0, ...style }}>
-            <img src={src} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', display: 'flex', minHeight: 0, minWidth: 0, ...style }}>
+            {/* flex:1 + alignSelf:stretch → l'img remplit largeur ET hauteur
+                sans dépendre de height:100% (bug Safari iOS avec flex:1 parent) */}
+            <img src={src} style={{ flex: 1, alignSelf: 'stretch', objectFit: 'cover', display: 'block', minWidth: 0, minHeight: 0 }} />
           </div>
         );
 
