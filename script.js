@@ -6,22 +6,34 @@
 // React hooks (depuis le global React)
 const { useState, useEffect, useMemo } = React;
 
-// Icônes Lucide React (global LucideReact)
+// Icônes Lucide React
+// Le UMD de lucide-react expose le global sous le nom "lucideReact" (minuscule)
+const _lucide = window.LucideReact || window.lucideReact || {};
 const {
   Camera, BookOpen, Plus, Trash2, ChevronLeft, ChevronRight,
   X, CheckCircle2, FolderPlus, Send, ImageIcon, Printer,
-  Calendar: CalendarIcon, Shuffle, Download, Maximize2, Sparkles,
-  LayoutGrid, Layers, Type, Frame
-} = LucideReact;
+  Calendar: CalendarIcon, Shuffle, LayoutGrid, Layers, Type, Frame
+} = _lucide;
 
 // ─── CONFIGURATION FIREBASE (compat SDK) ─────────────────────────────────────
-const firebaseConfig = (typeof __firebase_config !== 'undefined')
-  ? JSON.parse(__firebase_config)
-  : {};
+// firebase.initializeApp() n'est appelé qu'une fois et protégé contre une config vide
+let auth, db;
+try {
+  const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config)
+    ? JSON.parse(__firebase_config)
+    : null;
 
-const app  = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(app);
-const db   = firebase.firestore(app);
+  if (firebaseConfig) {
+    // Évite "already initialized" en cas de hot-reload
+    const existingApp = firebase.apps.length
+      ? firebase.apps[0]
+      : firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth(existingApp);
+    db   = firebase.firestore(existingApp);
+  }
+} catch (e) {
+  console.error('Firebase init error:', e);
+}
 
 const appId = 'journal-photo-studio-v100-final';
 
@@ -61,6 +73,7 @@ function App() {
 
   // 1. Authentification ──────────────────────────────────────────────────────
   useEffect(() => {
+    if (!auth) { setLoading(false); return; }   // Firebase non configuré
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -68,7 +81,7 @@ function App() {
         } else {
           await auth.signInAnonymously();
         }
-      } catch (e) { console.error('Auth error', e); }
+      } catch (e) { console.error('Auth error', e); setLoading(false); }
     };
     initAuth();
     const unsubscribe = auth.onAuthStateChanged(setUser);
@@ -77,7 +90,7 @@ function App() {
 
   // 2. Synchronisation Firestore ─────────────────────────────────────────────
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return;
     const ref = db
       .collection('artifacts').doc(appId)
       .collection('users').doc(user.uid)
@@ -148,7 +161,7 @@ function App() {
 
   // ─── Soumission d'un bloc ─────────────────────────────────────────────────
   const submitBlock = async () => {
-    if (!user || tempPhotos.length === 0 || isUploading || !activeTarget) return;
+    if (!user || !db || tempPhotos.length === 0 || isUploading || !activeTarget) return;
     setIsUploading(true);
     const destination = activeTarget;
     try {
@@ -173,6 +186,7 @@ function App() {
 
   // ─── Suppression d'un bloc ────────────────────────────────────────────────
   const deleteBlock = (blockId) => {
+    if (!db) return;
     db.collection('artifacts').doc(appId)
       .collection('users').doc(user.uid)
       .collection('souvenirs').doc(blockId)
