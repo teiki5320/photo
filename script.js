@@ -532,19 +532,17 @@ function App() {
             </div>
 
             {/* Contenu : livre gauche + panneau droite */}
-            <div style={{ flex: 1, display: 'flex', gap: 28, padding: '20px 32px', overflow: 'hidden', minHeight: 0, alignItems: 'stretch' }} className="no-print">
+            <div style={{ flex: 1, display: 'flex', gap: 28, padding: '20px 32px', overflow: 'hidden', minHeight: 0, alignItems: 'center' }} className="no-print">
 
               {/* Page (effet livre) */}
-              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ height: '100%', aspectRatio: '1/1.41', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.65))' }}>
-                  <div style={{ width: '100%', height: '100%', borderRadius: '3px 0 0 3px', overflow: 'hidden', boxShadow: 'inset -10px 0 20px rgba(0,0,0,0.12), 6px 0 10px rgba(0,0,0,0.35)' }}>
-                    {currentEntry ? <ScrapbookPage block={currentEntry.block} blockIdx={currentEntry.blockIdx} /> : <EmptyPage />}
-                  </div>
+              <div style={{ flexShrink: 0, height: 'calc(100vh - 180px)', aspectRatio: '1/1.41', filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.65))' }}>
+                <div style={{ width: '100%', height: '100%', borderRadius: '3px 0 0 3px', overflow: 'hidden', boxShadow: 'inset -10px 0 20px rgba(0,0,0,0.12), 6px 0 10px rgba(0,0,0,0.35)' }}>
+                  {currentEntry ? <ScrapbookPage block={currentEntry.block} blockIdx={currentEntry.blockIdx} /> : <EmptyPage />}
                 </div>
               </div>
 
               {/* Panneau paramètres */}
-              <div style={{ flex: 1, minWidth: 220, maxWidth: 320 }}>
+              <div style={{ flex: 1, minWidth: 200, maxWidth: 320, height: 'calc(100vh - 180px)' }}>
                 {currentEntry ? <SettingsPanel blockIdx={currentEntry.blockIdx} /> : null}
               </div>
 
