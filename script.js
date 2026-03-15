@@ -1,8 +1,8 @@
-// ─── JournalPhoto Studio – v1.3 ──────────────────────────────────────────────
+// ─── JournalPhoto Studio – v2.0 ──────────────────────────────────────────────
 // ─── React hooks ─────────────────────────────────────────────────────────────
 const { useState, useEffect, useMemo } = React;
 
-// ─── Icônes SVG inline (remplace lucide-react, zéro dépendance CDN) ──────────
+// ─── Icônes SVG inline ────────────────────────────────────────────────────────
 const _svg = (children) => ({ size = 24, className = '' }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -38,6 +38,22 @@ const LS_KEY = 'journalphoto_souvenirs';
 const lsLoad = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; } };
 const lsSave = (data) => localStorage.setItem(LS_KEY, JSON.stringify(data));
 
+// ─── Helpers images (compat ancien format string + nouveau {src,aspect}) ──────
+const imgSrc    = img => typeof img === 'string' ? img : (img?.src || '');
+const imgAspect = img => typeof img === 'string' ? 1 : (img?.aspect || 1);
+
+// Layout automatique selon les orientations des photos
+const autoLayout = images => {
+  const n = images.length;
+  if (n <= 1) return 0;
+  const aspects   = images.map(imgAspect);
+  const portraits  = aspects.filter(a => a < 0.85).length;
+  const landscapes = aspects.filter(a => a > 1.2).length;
+  if (n === 2) return portraits >= 1 ? 1 : 0;   // B si portrait, A si paysage
+  if (n === 3) return portraits >= 2 ? 1 : 0;   // B si majorité portrait, A sinon
+  return 2;                                       // Grille 2×2 pour 4–5
+};
+
 // ─── Composant principal ──────────────────────────────────────────────────────
 function App() {
   const [souvenirs,  setSouvenirs]  = useState([]);
@@ -58,7 +74,6 @@ function App() {
   const [isPrintMode,    setIsPrintMode]    = useState(false);
   const [currentSpread,  setCurrentSpread]  = useState(0);
 
-  // Modifications manuelles dans l'Album Studio (layout, commentaire, ordre photos)
   const [pageOverrides, setPageOverrides] = useState(() => {
     try { return JSON.parse(localStorage.getItem('journalphoto_overrides') || '{}'); } catch { return {}; }
   });
@@ -76,13 +91,11 @@ function App() {
     new Date().toLocaleString('fr-FR', { month: 'long', year: 'numeric' }),
   []);
 
-  // Chargement localStorage ────────────────────────────────────────────────────
   useEffect(() => {
     setSouvenirs(lsLoad());
     setLoading(false);
   }, []);
 
-  // Filtrage ───────────────────────────────────────────────────────────────────
   const activeTarget = view === 'current' ? currentMonthLabel : openedAlbum;
 
   const displayBlocks = useMemo(() =>
@@ -98,7 +111,7 @@ function App() {
     }, {}),
   [souvenirs]);
 
-  // Images ─────────────────────────────────────────────────────────────────────
+  // ─── Images ──────────────────────────────────────────────────────────────────
   const processImage = (base64) => new Promise(res => {
     const img = new Image();
     img.onload = () => {
@@ -110,17 +123,19 @@ function App() {
       }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      res(canvas.toDataURL('image/jpeg', 0.5));
+      res({ src: canvas.toDataURL('image/jpeg', 0.5), aspect: w / h });
     };
     img.src = base64;
   });
 
   const handleFiles = e => {
-    Array.from(e.target.files).forEach(f => {
+    const slots = 5 - tempPhotos.length;
+    if (slots <= 0) return;
+    Array.from(e.target.files).slice(0, slots).forEach(f => {
       const r = new FileReader();
       r.onload = async ev => {
-        const compressed = await processImage(ev.target.result);
-        setTempPhotos(p => [...p, compressed]);
+        const processed = await processImage(ev.target.result);
+        setTempPhotos(p => p.length < 5 ? [...p, processed] : p);
       };
       r.readAsDataURL(f);
     });
@@ -148,23 +163,24 @@ function App() {
     setSouvenirs(updated);
   };
 
-  // Mosaïque ───────────────────────────────────────────────────────────────────
+  // ─── Mosaïque (vue principale) ───────────────────────────────────────────────
   const Mosaic = ({ images }) => {
     const n = images.length;
-    if (n === 1) return <img src={images[0]} className="w-full h-full object-cover" />;
+    const s = img => imgSrc(img);
+    if (n === 1) return <img src={s(images[0])} className="w-full h-full object-cover" />;
     if (n === 2) return (
       <div className="flex h-full gap-0.5">
-        <img src={images[0]} className="w-1/2 h-full object-cover" />
-        <img src={images[1]} className="w-1/2 h-full object-cover" />
+        <img src={s(images[0])} className="w-1/2 h-full object-cover" />
+        <img src={s(images[1])} className="w-1/2 h-full object-cover" />
       </div>
     );
     return (
       <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5">
-        <img src={images[0]} className="w-full h-full object-cover" />
-        <img src={images[1]} className="w-full h-full object-cover" />
-        <img src={images[2]} className="w-full h-full object-cover" />
+        <img src={s(images[0])} className="w-full h-full object-cover" />
+        <img src={s(images[1])} className="w-full h-full object-cover" />
+        <img src={s(images[2])} className="w-full h-full object-cover" />
         <div className="relative">
-          <img src={images[3] || images[2]} className="w-full h-full object-cover" />
+          <img src={s(images[3] || images[2])} className="w-full h-full object-cover" />
           {n > 4 && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xs">+{n - 4}</div>}
         </div>
       </div>
@@ -177,6 +193,8 @@ function App() {
     </div>
   );
 
+  const atPhotoLimit = tempPhotos.length >= 5;
+
   return (
     <div className={`min-h-screen bg-[#fcfaf7] text-slate-900 font-serif pb-20 ${isPrintMode ? 'overflow-hidden' : ''}`}>
 
@@ -186,7 +204,7 @@ function App() {
           <button className="absolute top-6 right-6 text-white/50 hover:text-white p-2 z-[110]"><X size={32} /></button>
           <div className="relative w-full max-w-5xl h-full flex flex-col justify-center gap-6" onClick={e => e.stopPropagation()}>
             <div className="relative flex-1 flex items-center justify-center overflow-hidden rounded-sm">
-              <img src={activeSlider.images[sliderIdx]} className="max-w-full max-h-[75vh] object-contain shadow-2xl" />
+              <img src={imgSrc(activeSlider.images[sliderIdx])} className="max-w-full max-h-[75vh] object-contain shadow-2xl" />
               {activeSlider.images.length > 1 && <>
                 <button onClick={() => setSliderIdx(i => i > 0 ? i - 1 : activeSlider.images.length - 1)} className="absolute left-0 p-4 text-white/40 hover:text-white"><ChevronLeft size={48} /></button>
                 <button onClick={() => setSliderIdx(i => i < activeSlider.images.length - 1 ? i + 1 : 0)} className="absolute right-0 p-4 text-white/40 hover:text-white"><ChevronRight size={48} /></button>
@@ -204,20 +222,37 @@ function App() {
 
       {/* ── Album Livre Studio ───────────────────────────────────────────── */}
       {isPrintMode && (() => {
-        const totalSpreads = Math.max(1, Math.ceil(displayBlocks.length / 2));
+
+        // ── Liste de pages (gère les blocs sur 2 pages) ──────────────────
+        const pageList = (() => {
+          const list = [];
+          displayBlocks.forEach((block, blockIdx) => {
+            const ov = pageOverrides[`${openedAlbum}:${blockIdx}`] || {};
+            const imgs = ov.images || block.images || [];
+            if (ov.twoPage && imgs.length >= 3) {
+              list.push({ block, blockIdx, half: 'A' });
+              list.push({ block, blockIdx, half: 'B' });
+            } else {
+              list.push({ block, blockIdx, half: null });
+            }
+          });
+          return list;
+        })();
+
+        const totalSpreads = Math.max(1, Math.ceil(pageList.length / 2));
         const spreadIdx    = Math.min(currentSpread, totalSpreads - 1);
-        const leftBlock    = displayBlocks[spreadIdx * 2];
-        const rightBlock   = displayBlocks[spreadIdx * 2 + 1];
+        const leftEntry    = pageList[spreadIdx * 2]     || null;
+        const rightEntry   = pageList[spreadIdx * 2 + 1] || null;
 
         // ── Helpers overrides ────────────────────────────────────────────
         const getOv = idx => pageOverrides[`${openedAlbum}:${idx}`] || {};
         const setOv = (idx, patch) => setPageOverride(`${openedAlbum}:${idx}`, patch);
 
-        // ── Photo : cadre avec img inset:0 + flèches de réordonnancement ─
-        const btnS = { background: 'rgba(0,0,0,0.55)', border: 'none', color: 'white', borderRadius: 3, width: 24, height: 24, cursor: 'pointer', fontSize: 15, lineHeight: '24px', textAlign: 'center', padding: 0, touchAction: 'manipulation' };
-        const Photo = ({ src, style, onLeft, onRight }) => (
+        // ── Cadre photo ──────────────────────────────────────────────────
+        const btnS = { background: 'rgba(0,0,0,0.55)', border: 'none', color: 'white', borderRadius: 3, width: 26, height: 26, cursor: 'pointer', fontSize: 16, lineHeight: '26px', textAlign: 'center', padding: 0, touchAction: 'manipulation' };
+        const Photo = ({ img, style, onLeft, onRight }) => (
           <div style={{ overflow: 'hidden', border: '4px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.18)', position: 'relative', minHeight: 0, minWidth: 0, ...style }}>
-            <img src={src} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#f5f0ea', display: 'block' }} />
+            <img src={imgSrc(img)} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#f5f0ea', display: 'block' }} />
             {(onLeft || onRight) && (
               <div className="no-print" style={{ position: 'absolute', bottom: 4, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', padding: '0 4px' }}>
                 {onLeft  ? <button onPointerDown={e=>{e.preventDefault();onLeft(); }} style={btnS}>‹</button> : <span/>}
@@ -227,47 +262,80 @@ function App() {
           </div>
         );
 
-        // ── Barre de sélection de layout (overlay bas de page) ───────────
-        const LayoutBar = ({ pageIdx }) => {
-          const ov = getOv(pageIdx);
-          const cur = ov.layout !== undefined ? ov.layout : pageIdx % 4;
+        // ── Barre de mise en page ────────────────────────────────────────
+        const LayoutBar = ({ blockIdx, half }) => {
+          const ov      = getOv(blockIdx);
+          const allImgs = ov.images || (displayBlocks[blockIdx]?.images || []);
+          const n       = allImgs.length;
+          const curLayout = ov.layout !== undefined ? ov.layout : autoLayout(allImgs);
+          const isTwoPage = ov.twoPage || false;
+
+          // Sur la 2e moitié, juste un bouton retour 1 page
+          if (half === 'B') return (
+            <div className="no-print" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 12px', background: 'rgba(253,252,248,0.96)', borderTop: '1px solid #e8e0d4' }}>
+              <button onPointerDown={() => setOv(blockIdx, { twoPage: false })}
+                style={{ padding: '6px 20px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontFamily: 'sans-serif', background: '#c8b99a', color: 'white', fontWeight: 'bold' }}>
+                ← 1 page
+              </button>
+            </div>
+          );
+
           return (
             <div className="no-print" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(253,252,248,0.96)', borderTop: '1px solid #e8e0d4', boxSizing: 'border-box' }}>
               <span style={{ fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', color: '#b0a090', fontFamily: 'sans-serif', marginRight: 4 }}>Mise en page</span>
               {['A','B','C','D'].map((l, li) => (
-                <button key={li} onPointerDown={() => setOv(pageIdx, { layout: li })}
-                  style={{ padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 'bold', fontFamily: 'sans-serif', background: cur === li ? '#c8b99a' : '#f0ece6', color: cur === li ? 'white' : '#999', minWidth: 40 }}>
+                <button key={li} onPointerDown={() => setOv(blockIdx, { layout: li })}
+                  style={{ padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 'bold', fontFamily: 'sans-serif', background: curLayout === li ? '#c8b99a' : '#f0ece6', color: curLayout === li ? 'white' : '#999', minWidth: 40 }}>
                   {l}
                 </button>
               ))}
+              {n >= 3 && (
+                <button onPointerDown={() => setOv(blockIdx, { twoPage: !isTwoPage })}
+                  style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'sans-serif', background: isTwoPage ? '#c8b99a' : '#f0ece6', color: isTwoPage ? 'white' : '#999', fontWeight: 'bold', marginLeft: 4 }}>
+                  ↔ 2P
+                </button>
+              )}
             </div>
           );
         };
 
         // ── Page scrapbook ───────────────────────────────────────────────
-        const ScrapbookPage = ({ block, idx }) => {
-          const ov         = getOv(idx);
-          const effImages  = ov.images  || (block?.images || []);
-          const effComment = ov.comment !== undefined ? ov.comment : (block?.comment || '');
-          const effLayout  = ov.layout  !== undefined ? ov.layout  : idx % 4;
-          const n          = effImages.length;
-          const onOv       = patch => setOv(idx, patch);
+        const ScrapbookPage = ({ block, blockIdx, half }) => {
+          if (!block) return (
+            <div style={{ background: '#fdfcf8', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <p style={{ color: '#ddd', fontStyle: 'italic', fontFamily: 'Georgia,serif', fontSize: '13px' }}>— page vide —</p>
+            </div>
+          );
 
-          // Swap deux photos dans l'ordre
+          const ov         = getOv(blockIdx);
+          const allImages  = ov.images  || block.images || [];
+          const effComment = ov.comment !== undefined ? ov.comment : (block.comment || '');
+          const splitAt    = Math.ceil(allImages.length / 2);
+
+          // Sous-ensemble d'images selon la moitié
+          const effImages  = half === 'A' ? allImages.slice(0, splitAt)
+                           : half === 'B' ? allImages.slice(splitAt)
+                           : allImages;
+          const startIdx   = half === 'B' ? splitAt : 0;
+          const effLayout  = ov.layout !== undefined ? ov.layout : autoLayout(half ? effImages : allImages);
+          const n          = effImages.length;
+          const onOv       = patch => setOv(blockIdx, patch);
+
           const moveImg = (i, j) => {
-            const imgs = [...effImages]; [imgs[i], imgs[j]] = [imgs[j], imgs[i]]; onOv({ images: imgs });
+            const imgs = [...allImages];
+            const ai = startIdx + i, aj = startIdx + j;
+            [imgs[ai], imgs[aj]] = [imgs[aj], imgs[ai]];
+            onOv({ images: imgs });
           };
-          // Génère les props de déplacement pour la photo à l'index i
           const mp = i => ({
             onLeft:  i > 0     ? () => moveImg(i, i-1) : undefined,
             onRight: i < n - 1 ? () => moveImg(i, i+1) : undefined,
           });
 
-          // Commentaire éditable inline (sauvegarde au blur)
-          const commentStyle = { fontStyle: 'italic', color: '#444', fontSize: '12px', lineHeight: 1.5, fontFamily: 'Georgia,serif', outline: 'none', borderBottom: '1px dashed rgba(200,185,154,0.6)', cursor: 'text', margin: 0, minHeight: '1em' };
+          const commentStyle = { fontStyle: 'italic', color: '#444', fontSize: '12px', lineHeight: 1.5, fontFamily: 'Georgia,serif', outline: 'none', borderBottom: '1px dashed rgba(200,185,154,0.6)', cursor: 'text', margin: 0, minHeight: '1em', overflow: 'hidden' };
           const CommentP = ({ style: s = {} }) => (
             <p contentEditable suppressContentEditableWarning
-              onBlur={e => onOv({ comment: e.target.innerText.trim() })}
+              onBlur={e => onOv({ comment: e.target.innerText.trim().slice(0, 400) })}
               style={{ ...commentStyle, ...s }}>
               {effComment || '—'}
             </p>
@@ -275,38 +343,77 @@ function App() {
 
           const pg = { background: '#fdfcf8', width: '100%', height: '100%', padding: '6%', paddingBottom: 'calc(6% + 44px)', display: 'flex', flexDirection: 'column', gap: '4%', overflow: 'hidden', boxSizing: 'border-box' };
           const accentLine = <div style={{ height: '2px', background: 'linear-gradient(to right,#c8b99a,transparent)', marginBottom: '4%' }} />;
-          const dateStr = block ? new Date(block.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+          const dateStr = new Date(block.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+          const dateStyle = { margin: 0, fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' };
           const title = effComment ? effComment.split(' ').slice(0, 4).join(' ') : 'Souvenir';
 
-          if (!block) return (
-            <div style={{ ...pg, alignItems: 'center', justifyContent: 'center' }}>
-              <p style={{ color: '#ddd', fontStyle: 'italic', fontFamily: 'Georgia,serif', fontSize: '13px' }}>— page vide —</p>
+          // ── Mode 2 pages — première moitié ───────────────────────────
+          if (half === 'A') return (
+            <div style={pg}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
+                <p style={dateStyle}>{dateStr}</p>
+                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', color: '#c8b99a', fontFamily: 'sans-serif' }}>1 / 2</p>
+              </div>
+              {accentLine}
+              {n === 1 && <Photo img={effImages[0]} style={{ flex: 1 }} {...mp(0)} />}
+              {n === 2 && (
+                <div style={{ flex: 1, display: 'flex', gap: '3%' }}>
+                  <Photo img={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
+                  <Photo img={effImages[1]} style={{ flex: 1 }} {...mp(1)} />
+                </div>
+              )}
+              {n >= 3 && (
+                <>
+                  <Photo img={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
+                  <div style={{ display: 'flex', gap: '3%', flex: '0 0 28%' }}>
+                    {effImages.slice(1).map((img, i) => <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i+1)} />)}
+                  </div>
+                </>
+              )}
             </div>
           );
 
-          // Layout A – Hero + strip
-          if (effLayout === 0) return (
+          // ── Mode 2 pages — deuxième moitié ───────────────────────────
+          if (half === 'B') return (
             <div style={pg}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
-                <p style={{ margin: 0, fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' }}>{dateStr}</p>
+                <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', color: '#c8b99a', fontFamily: 'sans-serif' }}>2 / 2</p>
+                <p style={dateStyle}>{dateStr}</p>
               </div>
               {accentLine}
-              <Photo src={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
+              {n === 1 && <Photo img={effImages[0]} style={{ flex: 1 }} {...mp(0)} />}
               {n >= 2 && (
-                <div style={{ display: 'flex', gap: '3%', flex: '0 0 26%' }}>
-                  {effImages.slice(1, 4).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} {...mp(i+1)} />)}
+                <div style={{ flex: 1, display: 'flex', gap: '3%' }}>
+                  {effImages.map((img, i) => <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i)} />)}
                 </div>
               )}
               <CommentP style={{ margin: '3% 0 0' }} />
             </div>
           );
 
-          // Layout B – Grande gauche + titre + petites droite
+          // ── Layout A – Hero + strip de petites ────────────────────────
+          if (effLayout === 0) return (
+            <div style={pg}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2%' }}>
+                <p style={dateStyle}>{dateStr}</p>
+              </div>
+              {accentLine}
+              <Photo img={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
+              {n >= 2 && (
+                <div style={{ display: 'flex', gap: '3%', flex: '0 0 26%' }}>
+                  {effImages.slice(1, 4).map((img, i) => <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i+1)} />)}
+                </div>
+              )}
+              <CommentP style={{ margin: '3% 0 0' }} />
+            </div>
+          );
+
+          // ── Layout B – Grande gauche + titre + petites droite ─────────
           if (effLayout === 1) return (
             <div style={{ ...pg, flexDirection: 'row', paddingBottom: 'calc(6% + 44px)' }}>
               <div style={{ flex: 1.3, display: 'flex', flexDirection: 'column', gap: '4%', minHeight: 0 }}>
-                <Photo src={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
-                {n >= 4 && <Photo src={effImages[3]} style={{ flex: '0 0 28%' }} {...mp(3)} />}
+                <Photo img={effImages[0]} style={{ flex: 1 }} {...mp(0)} />
+                {n >= 4 && <Photo img={effImages[3]} style={{ flex: '0 0 28%' }} {...mp(3)} />}
               </div>
               <div style={{ flex: 0.9, display: 'flex', flexDirection: 'column', paddingLeft: '5%', gap: '4%', minHeight: 0 }}>
                 <div style={{ flexShrink: 0 }}>
@@ -316,13 +423,13 @@ function App() {
                   <CommentP style={{ fontSize: '11px', color: '#666' }} />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6%', minHeight: 0 }}>
-                  {effImages.slice(1, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} {...mp(i+1)} />)}
+                  {effImages.slice(1, 3).map((img, i) => <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i+1)} />)}
                 </div>
               </div>
             </div>
           );
 
-          // Layout C – Grille 2×2
+          // ── Layout C – Grille 2×2 ─────────────────────────────────────
           if (effLayout === 2) return (
             <div style={pg}>
               <div style={{ borderBottom: '2px solid #c8b99a', paddingBottom: '3%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -330,19 +437,19 @@ function App() {
                 <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif' }}>{dateStr}</p>
               </div>
               <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '3%' }}>
-                {[0,1,2,3].map(i => <Photo key={i} src={effImages[i] || effImages[n-1]} style={{ width: '100%', height: '100%' }} {...mp(i)} />)}
+                {[0,1,2,3].map(i => <Photo key={i} img={effImages[i] || effImages[n-1]} style={{ width: '100%', height: '100%' }} {...mp(Math.min(i, n-1))} />)}
               </div>
               <CommentP style={{ margin: '2% 0 0' }} />
             </div>
           );
 
-          // Layout D – Bandeau 3 petites + grande hero
+          // ── Layout D – Bandeau 3 petites + grande hero ────────────────
           return (
             <div style={pg}>
               <div style={{ display: 'flex', gap: '3%', flex: '0 0 22%' }}>
-                {effImages.slice(0, 3).map((src, i) => <Photo key={i} src={src} style={{ flex: 1 }} {...mp(i)} />)}
+                {effImages.slice(0, 3).map((img, i) => <Photo key={i} img={img} style={{ flex: 1 }} {...mp(i)} />)}
               </div>
-              <Photo src={effImages[Math.min(3, n-1)]} style={{ flex: 1 }} {...mp(Math.min(3, n-1))} />
+              <Photo img={effImages[Math.min(3, n-1)]} style={{ flex: 1 }} {...mp(Math.min(3, n-1))} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2%', gap: '8px' }}>
                 <CommentP style={{ flex: 1 }} />
                 <p style={{ margin: 0, fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#a09080', fontFamily: 'sans-serif', flexShrink: 0 }}>{dateStr}</p>
@@ -373,15 +480,19 @@ function App() {
               <div style={{ display: 'flex', width: '100%', maxWidth: 960, aspectRatio: '2/1.4', filter: 'drop-shadow(0 30px 60px rgba(0,0,0,0.7))' }}>
                 {/* Page gauche */}
                 <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '6px 0 0 6px', overflow: 'hidden', boxShadow: 'inset -6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
-                  <ScrapbookPage block={leftBlock} idx={spreadIdx * 2} />
-                  <LayoutBar pageIdx={spreadIdx * 2} />
+                  {leftEntry
+                    ? <ScrapbookPage block={leftEntry.block} blockIdx={leftEntry.blockIdx} half={leftEntry.half} />
+                    : <div style={{ width: '100%', height: '100%', background: '#fdfcf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#ddd', fontStyle: 'italic', fontFamily: 'Georgia,serif', fontSize: '13px' }}>— page vide —</p></div>}
+                  {leftEntry && <LayoutBar blockIdx={leftEntry.blockIdx} half={leftEntry.half} />}
                 </div>
                 {/* Reliure */}
                 <div style={{ width: 10, background: 'linear-gradient(to right,#bbb,#f0ede8,#bbb)', flexShrink: 0, boxShadow: 'inset 0 0 6px rgba(0,0,0,0.2)' }} />
                 {/* Page droite */}
                 <div style={{ flex: 1, background: '#fdfcf8', borderRadius: '0 6px 6px 0', overflow: 'hidden', boxShadow: 'inset 6px 0 12px rgba(0,0,0,0.15)', position: 'relative' }}>
-                  <ScrapbookPage block={rightBlock} idx={spreadIdx * 2 + 1} />
-                  <LayoutBar pageIdx={spreadIdx * 2 + 1} />
+                  {rightEntry
+                    ? <ScrapbookPage block={rightEntry.block} blockIdx={rightEntry.blockIdx} half={rightEntry.half} />
+                    : <div style={{ width: '100%', height: '100%', background: '#fdfcf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: '#ddd', fontStyle: 'italic', fontFamily: 'Georgia,serif', fontSize: '13px' }}>— page vide —</p></div>}
+                  {rightEntry && <LayoutBar blockIdx={rightEntry.blockIdx} half={rightEntry.half} />}
                 </div>
               </div>
             </div>
@@ -454,19 +565,32 @@ function App() {
                   <div className="flex flex-wrap gap-3">
                     {tempPhotos.map((img, i) => (
                       <div key={i} className="relative w-16 h-16">
-                        <img src={img} className="w-full h-full object-cover rounded-xl shadow ring-2 ring-white" />
+                        <img src={imgSrc(img)} className="w-full h-full object-cover rounded-xl shadow ring-2 ring-white" />
                         <button onClick={() => setTempPhotos(p => p.filter((_, idx) => idx !== i))}
                           className="absolute -top-1 -right-1 bg-white text-red-500 rounded-full shadow border p-0.5"><X size={10} /></button>
                       </div>
                     ))}
-                    <label className="w-16 h-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:bg-blue-50 transition-all">
-                      <Camera size={24} className="text-slate-300" />
-                      <input type="file" className="hidden" accept="image/*" multiple onChange={handleFiles} />
-                    </label>
+                    {!atPhotoLimit && (
+                      <label className="w-16 h-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:bg-blue-50 transition-all">
+                        <Camera size={24} className="text-slate-300" />
+                        <input type="file" className="hidden" accept="image/*" multiple onChange={handleFiles} />
+                      </label>
+                    )}
+                    {atPhotoLimit && (
+                      <div className="flex items-center px-3 py-1 bg-amber-50 rounded-xl border border-amber-100">
+                        <p className="text-[10px] font-bold text-amber-400 font-sans">5 / 5 max</p>
+                      </div>
+                    )}
                   </div>
-                  <textarea placeholder="Quelle est l'histoire de ce lot de photos ?"
-                    className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm outline-none min-h-[140px] resize-none font-serif italic shadow-inner"
-                    value={comment} onChange={e => setComment(e.target.value)} />
+                  <div className="space-y-1">
+                    <textarea placeholder="Quelle est l'histoire de ce lot de photos ?"
+                      className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm outline-none min-h-[140px] resize-none font-serif italic shadow-inner"
+                      value={comment} onChange={e => setComment(e.target.value.slice(0, 400))}
+                      maxLength={400} rows={6} />
+                    <p className={`text-right text-[10px] font-sans pr-1 ${comment.length > 360 ? 'text-amber-400' : 'text-slate-300'}`}>
+                      {comment.length} / 400
+                    </p>
+                  </div>
                   <button onClick={submitBlock} disabled={tempPhotos.length === 0 || isUploading}
                     className={`w-full font-bold py-6 rounded-[2rem] shadow-xl flex items-center justify-center gap-4 transition-all duration-300
                       ${showSuccess ? 'bg-green-600 text-white' : 'bg-slate-900 hover:bg-black text-white disabled:bg-slate-200'}`}>
@@ -566,7 +690,7 @@ function App() {
                       <div key={name} onClick={() => { setOpenedAlbum(name); setView('library'); }} className="group cursor-pointer perspective-1000">
                         <div className="relative aspect-[16/10] bg-[#1a2a44] rounded-r-[3rem] shadow-2xl overflow-hidden border-l-[15px] border-black/30 group-hover:translate-x-3 transition-all duration-700">
                           {albumsMap[name][0]?.images[0] && (
-                            <img src={albumsMap[name][0].images[0]}
+                            <img src={imgSrc(albumsMap[name][0].images[0])}
                               className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale group-hover:grayscale-0 group-hover:opacity-60 transition-all duration-1000" />
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80" />
